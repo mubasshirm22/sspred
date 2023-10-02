@@ -16,7 +16,7 @@ from psycopg2 import sql
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-conn = psycopg2.connect(DATABASE_URL)
+conn = psycopg2.connect('postgres://zahidul23:HfxOLtr9FR6b@ep-cool-sea-43204625.us-east-2.aws.neon.tech/neondb')
 
 def dbselect(rowid):
 	cursor = conn.cursor(cursor_factory=RealDictCursor)
@@ -267,5 +267,5 @@ def validate_sites(form):
 	return count	
 
 if __name__ == "__main__":
-	#app.run(debug=True) #Run on localhost 127.0.0.1:5000
-	app.run(host='0.0.0.0', debug=True) #Run online on public IP:5000
+	app.run(debug=True) #Run on localhost 127.0.0.1:5000
+	#app.run(host='0.0.0.0', debug=True) #Run online on public IP:5000

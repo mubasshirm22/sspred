@@ -7,7 +7,7 @@ from psycopg2 import sql
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-conn = psycopg2.connect(DATABASE_URL)
+conn = psycopg2.connect('postgres://zahidul23:HfxOLtr9FR6b@ep-cool-sea-43204625.us-east-2.aws.neon.tech/neondb')
 cursor = conn.cursor()
 
 create_table_query = '''CREATE TABLE IF NOT EXISTS seqtable
