@@ -63,20 +63,20 @@ def dbupdate(rowid, rowcol, rowval):
 siteDict = {
 	"JPred": jpred,
 	"PSI": psi,
-	"PSS": pss,
-	"RaptorX": raptorx,
+	#"PSS": pss,
+	#"RaptorX": raptorx,
 	"Sable": sable,
-	"Yaspin": yaspin,
+	#"Yaspin": yaspin,
 	"SSPro": sspro
 }
 
 siteLimit = {
 	"JPred": 20,
 	"PSI": 20,
-	"PSS": 3,
-	"RaptorX": 20,
+	#"PSS": 3,
+	#"RaptorX": 20,
 	"Sable": 20,
-	"Yaspin": 3,
+	#"Yaspin": 3,
 	"SSPro": 5
 }
 
@@ -103,10 +103,10 @@ def hello(name=None):
 	runningCounter = {
 		"JPred": 0,
 		"PSI": 0,
-		"PSS": 0,
-		"RaptorX": 0,
+		#"PSS": 0,
+		#"RaptorX": 0,
 		"Sable": 0,
-		"Yaspin": 0,
+		#"Yaspin": 0,
 		"SSPro": 0
 	}
 	for t in threading.enumerate():
@@ -122,10 +122,10 @@ def hello(name=None):
 			'email': form.email.data,
 			'JPred': form.JPred.data,
 			'PSI':   form.PSI.data,
-			'PSS':   form.PSS.data,
-			'RaptorX': form.RaptorX.data,
+			#'PSS':   form.PSS.data,
+			#'RaptorX': form.RaptorX.data,
 			'Sable':   form.Sable.data,
-			'Yaspin':   form.Yaspin.data,
+			#'Yaspin':   form.Yaspin.data,
 			'SSPro':   form.SSPro.data,
 			'submitbtn': 'Submit'
 			}
@@ -272,5 +272,5 @@ def validate_sites(form):
 	return count	
 
 if __name__ == "__main__":
-	#app.run(debug=True) #Run on localhost 127.0.0.1:5000
-	app.run(host='0.0.0.0', debug=True) #Run online on public IP:5000
+	app.run(debug=True) #Run on localhost 127.0.0.1:5000
+	#app.run(host='0.0.0.0', debug=True) #Run online on public IP:5000
