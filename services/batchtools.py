@@ -115,7 +115,7 @@ def pdbget(pdbid, chain):
     sequences = []
     for line in new.strip().split('\n'):
         parts = line.split()  # Split the line into parts
-        if parts[0] == 'SEQ':  # Check if the line starts with 'SEQ'
+        if parts and parts[0] == 'SEQ':  # Check if the line starts with 'SEQ'
             sequence = parts[2]  # The sequence is the third element (index 2)
             sequences.append(sequence)  # Add the sequence to the list
     finalseq = ''.join(sequences)
