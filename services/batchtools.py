@@ -131,8 +131,8 @@ def pdbget(pdbid, chain):
     # ------ Get the amount of residues so that it can be used to isolate Structure
 
     # Get the last element
-	if selected_seq_lines:
-		last_element = selected_seq_lines[-1]
+    if selected_seq_lines:
+        last_element = selected_seq_lines[-1]
 
     # Split by whitespace and reverse the list
     parts = last_element.split()
