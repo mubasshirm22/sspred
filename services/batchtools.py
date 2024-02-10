@@ -58,138 +58,73 @@ def majorityVote(seq, ssObject):
 	else:
 		return None
 	return output
+import requests
 
 def pdbget(pdbid, chain):
-	
+    # Validate input
+    if not isinstance(pdbid, str) or not pdbid.isalnum():
+        print("Invalid pdbid.")
+        return None
+
+    if not isinstance(chain, str) or not chain.isalnum():
+        print("Invalid chain.")
+        return None
+
     data = {
-    "pdbid": pdbid, # replace with pdbid variable
-    "paste_field": "",
-    "action": "compute",
-    "contact_threshold": "6",
-    "sensitive": "true"
+        "pdbid": pdbid,  # replace with pdbid variable
+        "paste_field": "",
+        "action": "compute",
+        "contact_threshold": "6",
+        "sensitive": "true"
     }
     
     url = 'https://webclu.bio.wzw.tum.de/cgi-bin/stride/stridecgi.py'
-    response = requests.post(url, data=data, headers="")
-
+    try:
+        response = requests.post(url, data=data)
+        response.raise_for_status()  # This will raise an exception for HTTP errors
+    except requests.RequestException as e:
+        print(f"Request failed: {e}")
+        return None  # Ensure this is handled appropriately in your code
 
     lines = response.text.split('\n')
 
     selected_str_lines = []
     selected_seq_lines = []
-    color = []
-    # --------------- Isolate sequence and structure lines  between a certain chain ID section
-
-    # Initialize a flag to indicate when we are between CHN lines with identifier A
     in_section_a = False
-    variable_char = chain
     for line in lines:
-        # Check if the line starts with CHN and contains the identifier A
-        if line.startswith('CHN') and f' {variable_char} ' in line: # replace B with chainID
-            in_section_a = True  # Start capturing STR lines
-        elif line.startswith('CHN') and f' {variable_char} ' not in line:
-            in_section_a = False  # Stop capturing STR lines
-        # If we are in the right section and the line starts with STR, add it to the list
-        if in_section_a and line.startswith('STR'):
-            selected_str_lines.append(line)
-        if in_section_a and line.startswith('SEQ'):
-            selected_seq_lines.append(line)
+        if line.startswith('CHN') and f' {chain} ' in line:
+            in_section_a = True
+        elif line.startswith('CHN'):
+            in_section_a = False
+        if in_section_a:
+            if line.startswith('STR'):
+                selected_str_lines.append(line)
+            elif line.startswith('SEQ'):
+                selected_seq_lines.append(line)
 
-    # Now 'selected_str_lines' contains the STR lines between CHN lines with identifier A
-    # Now 'selected_seq_lines' contains the SEQ lines between CHN lines with identifier A
+    # If no sequence or structure data was found, return None
+    if not selected_seq_lines or not selected_str_lines:
+        print("No valid sequence or structure data found.")
+        return None
 
+    # Process sequences
+    sequences = [line.split()[2] for line in selected_seq_lines if len(line.split()) > 2]
+    sequence = ''.join(sequences)
 
-    # ----------------------------------------------------
+    # Process structure, preserving the original logic for handling the structure information
+    final_structure = ''.join([line[10:60] for line in selected_str_lines]).replace(" ", "C")
 
-
-
-
-    # --------- For Isolating Sequence From Chain ID section
-    new = ''
-    for line in selected_seq_lines:
-        new = new + "\n" + line
-    # print(line)
-
-    print(new)
-
-    sequences = []
-    for line in new.strip().split('\n'):
-        parts = line.split()  # Split the line into parts
-        if parts and parts[0] == 'SEQ':  # Check if the line starts with 'SEQ'
-            sequence = parts[2]  # The sequence is the third element (index 2)
-            sequences.append(sequence)  # Add the sequence to the list
-    finalseq = ''.join(sequences)
-
-    print('final seq' + finalseq)
-
-    # -----------------------------------
-
-
-
-    # ------ For Isolating Structure From Chain ID section
-
-    # ------ Get the amount of residues so that it can be used to isolate Structure
-
-    # Get the last element
-    if selected_seq_lines:
-        last_element = selected_seq_lines[-1]
-
-    # Split by whitespace and reverse the list
-    parts = last_element.split()
-    reversed_parts = reversed(parts)
-
-    # Find the last number
-    last_number = None
-    for part in reversed_parts:
-        if part.isdigit():
-            last_number = int(part)
-            break
-
-    print(last_number)
-
-    residue_count = last_number
-    residue_count = residue_count%50
-    # residue_count now has the amount of residues that must be present in the last structure 
-    # ---------------------
-
-
-    v = ''
-    for line in selected_str_lines:
-        v = v + "\n" + line
-
-    # The final string to accumulate the results
-    final_string = ""
-
-    # Variable number of characters for the last element
-    variable_chars = residue_count  # Replace with the actual number you want
-
-    # Iterate through all but the last string to add 50 characters from each
-    for i in range(len(selected_str_lines) - 1):
-        final_string += selected_str_lines[i][10:10+50]
-
-    # Add the variable number of characters from the last string
-    final_string += selected_str_lines[-1][10:10+variable_chars]
-
-    print('"' + final_string + '"')
-    finalstr = final_string.replace(" ", "C")
-    print(finalstr)
-
-    # data to return
-    sequence = finalseq
-    secondary = finalstr
-
-    # --  errors to test
-    # capitalization/lackthereof
-    # spaces in chain id etc
-    # spaces in pdbid?
+    # Construct the result dictionary
     result = {
-            'pdbid': pdbid, 
-            'chain': chain,
-            'primary': sequence,
-            'color': color,
-            'secondary': secondary
+        'pdbid': pdbid,
+        'chain': chain,
+        'primary': sequence,
+        'color': [],  # Placeholder for color information
+        'secondary': final_structure
     }
+
     return result
+
 
 '''
 #No auto canceling, infinite wait time
