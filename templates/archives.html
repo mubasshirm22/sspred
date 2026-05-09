@@ -1,167 +1,112 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.8/socket.io.min.js" type="text/javascript"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/lab.css') }}">
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-  <title>Archive — SSPred</title>
-  <style>
-    body { background: var(--bg); }
-    .archive-nav-bar {
-      display: flex; align-items: center; justify-content: space-between;
-      background: var(--surface); border-bottom: 1px solid var(--border);
-      padding: 0 24px; height: 56px;
-    }
-    .archive-nav-bar .nav-logo { font-weight: 800; color: var(--primary); font-size: 1.1rem; text-decoration: none; }
-    .archive-nav-bar .nav-links { display: flex; gap: 4px; }
-    .archive-nav-bar .nav-links a {
-      font-size: 0.88rem; font-weight: 500; color: var(--text-secondary);
-      padding: 6px 12px; border-radius: 6px; text-decoration: none; transition: background .15s;
-    }
-    .archive-nav-bar .nav-links a:hover { background: var(--bg); color: var(--text); }
-    .archive-nav-bar .nav-links a.active { color: var(--primary); background: #eff6ff; }
-    .archive-wrap { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
-    .archive-header { margin-bottom: 24px; }
-    .archive-header h1 { font-size: 1.6rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-    .archive-header p { color: var(--text-secondary); font-size: 0.9rem; }
-    .archive-tip {
-      font-size: 0.82rem; color: var(--text-secondary);
-      background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px;
-      padding: 8px 14px; margin-bottom: 20px;
-    }
-    .archive-pagination { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-    .archive-pagination a {
-      display: inline-flex; align-items: center; padding: 8px 16px;
-      border-radius: 6px; font-size: 0.88rem; font-weight: 600;
-      border: 1px solid var(--border); background: var(--surface);
-      color: var(--text-secondary); text-decoration: none; transition: background .15s, color .15s;
-    }
-    .archive-pagination a:hover { background: var(--bg); color: var(--primary); }
-    .archive-pagination a[href=""] { pointer-events: none; opacity: .4; }
-    .archive-pagination .page-label { font-size: 0.85rem; color: var(--text-light); }
-    .archive-table {
-      width: 100%; border-collapse: collapse;
-      background: var(--surface); border-radius: 10px;
-      overflow: hidden; box-shadow: var(--shadow);
-    }
-    .archive-table thead tr { background: var(--bg); border-bottom: 2px solid var(--border); }
-    .archive-table th {
-      text-align: left; padding: 12px 16px;
-      font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .06em; color: var(--text-secondary);
-    }
-    .archive-table tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
-    .archive-table tbody tr:last-child { border-bottom: none; }
-    .archive-table tbody tr:hover { background: #f8faff; }
-    .archive-table td { padding: 12px 16px; font-size: 0.88rem; color: var(--text); vertical-align: middle; }
-    .job-link {
-      font-family: monospace; font-size: 0.82rem; color: var(--primary);
-      background: #eff6ff; padding: 3px 8px; border-radius: 4px;
-      text-decoration: none; font-weight: 600;
-    }
-    .job-link:hover { background: #dbeafe; }
-    .time-cell { color: var(--text-secondary); font-size: 0.82rem; white-space: nowrap; }
-    .seq-cell {
-      font-family: monospace; font-size: 0.8rem; color: var(--text-secondary);
-      max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-  </style>
-</head>
-<body>
+{% extends "lab/lab_base.html" %}
+{% block title %}SSPred Archive{% endblock %}
 
-  <div class="archive-nav-bar">
-    <a href="/tools/sspred" class="nav-logo">SSPred</a>
-    <div class="nav-links">
-      <a href="/tools/sspred">Submit</a>
-      <a href="/tools/sspred/archive" class="active">Archive</a>
-      <a href="/">Singh Lab</a>
+{% block extra_head %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}?v=2.1">
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="lab-container">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="background:rgba(255,255,255,.15);color:#fff;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:4px 12px;border-radius:999px;">Archive</span>
+        </div>
+        <h1>SSPred Job Archive</h1>
+        <p>Recent SSPred submissions stored in the database, 20 jobs per page, newest first.</p>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-self:flex-start;">
+        <a href="/tools/sspred" style="padding:9px 18px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:7px;color:#fff;font-size:0.85rem;font-weight:600;text-decoration:none;">New Submission</a>
+      </div>
     </div>
   </div>
+</section>
 
-  <div class="archive-wrap">
-    <div class="archive-header">
-      <h1>Job Archive</h1>
-      <p>Past prediction submissions — 20 per page, most recent first. Use Ctrl+F to search this page.</p>
+<section class="lab-section" style="padding:40px 0 80px;">
+  <div class="lab-container" style="max-width:960px;">
+    <div class="info-section" style="margin-bottom:20px;">
+      Each job ID links directly to its results page. Save the ID shown on the results page if you want to find a run again later.
     </div>
 
-    <div class="archive-tip">
-      Each Job ID links to that prediction's results page. Save the ID shown on your results page to find your job here later.
+    <div class="archive-pagination" style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <a id="prevPage" href="" class="btn btn-secondary">← Previous</a>
+      <span class="page-label" style="font-size:0.85rem;color:var(--text-light);">Page <strong id="pageLabel"></strong></span>
+      <a id="nextPage" href="" class="btn btn-secondary">Next →</a>
     </div>
 
-    <div class="archive-pagination">
-      <a id="prevPage" href="">← Previous</a>
-      <span class="page-label">Page <strong id="pageLabel"></strong></span>
-      <a id="nextPage" href="">Next →</a>
-    </div>
-
-    <table class="archive-table" id="myTable">
+    <table class="archive-table" id="myTable" style="width:100%;border-collapse:collapse;background:var(--surface);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);">
       <thead>
-        <tr>
-          <th>Job ID</th>
-          <th>Submitted</th>
-          <th>Sequence</th>
+        <tr style="background:var(--bg);border-bottom:2px solid var(--border);">
+          <th style="text-align:left;padding:12px 16px;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary);">Job ID</th>
+          <th style="text-align:left;padding:12px 16px;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary);">Submitted</th>
+          <th style="text-align:left;padding:12px 16px;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary);">Sequence</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
 
-    <div class="archive-pagination" style="margin-top:16px;">
-      <a id="prevPage2" href="">← Previous</a>
-      <span class="page-label">Page <strong id="pageLabel2"></strong></span>
-      <a id="nextPage2" href="">Next →</a>
+    <div class="archive-pagination" style="display:flex;align-items:center;gap:12px;margin-top:16px;">
+      <a id="prevPage2" href="" class="btn btn-secondary">← Previous</a>
+      <span class="page-label" style="font-size:0.85rem;color:var(--text-light);">Page <strong id="pageLabel2"></strong></span>
+      <a id="nextPage2" href="" class="btn btn-secondary">Next →</a>
     </div>
   </div>
+</section>
+{% endblock %}
 
-  <script type="text/javascript">
-    var data = {{ data | safe }};
-    var page = {{ pagenum }};
+{% block extra_scripts %}
+<script>
+var data = {{ data | safe }};
+var page = {{ pagenum }};
 
-    document.getElementById('pageLabel').textContent = page;
-    document.getElementById('pageLabel2').textContent = page;
+document.getElementById('pageLabel').textContent = page;
+document.getElementById('pageLabel2').textContent = page;
 
-    var prevNum = page - 1;
-    var nextNum = page + 1;
-    var base = document.location.origin + '/tools/sspred/archive/';
+var prevNum = page - 1;
+var nextNum = page + 1;
+var base = document.location.origin + '/tools/sspred/archive/';
 
-    ['nextPage', 'nextPage2'].forEach(function(id) {
-      document.getElementById(id).setAttribute('href', base + nextNum);
-    });
-    ['prevPage', 'prevPage2'].forEach(function(id) {
-      if (prevNum >= 1) {
-        document.getElementById(id).setAttribute('href', base + prevNum);
-      }
-    });
+['nextPage', 'nextPage2'].forEach(function(id) {
+  document.getElementById(id).setAttribute('href', base + nextNum);
+});
+['prevPage', 'prevPage2'].forEach(function(id) {
+  if (prevNum >= 1) {
+    document.getElementById(id).setAttribute('href', base + prevNum);
+  } else {
+    document.getElementById(id).setAttribute('href', '');
+    document.getElementById(id).style.pointerEvents = 'none';
+    document.getElementById(id).style.opacity = '0.4';
+  }
+});
 
-    function decodeBase62(c) {
-      var code = c;
-      var timestamp = 0;
-      var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-      for (var i = 0; i < code.length; i++) {
-        timestamp += chars.indexOf(code[(code.length - 1) - i]) * Math.pow(62, i);
-      }
-      if (timestamp !== 0) { timestamp = timestamp / 100; }
-      return timestamp;
-    }
+function decodeBase62(c) {
+  var timestamp = 0;
+  var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  for (var i = 0; i < c.length; i++) {
+    timestamp += chars.indexOf(c[(c.length - 1) - i]) * Math.pow(62, i);
+  }
+  if (timestamp !== 0) {
+    timestamp = timestamp / 100;
+  }
+  return timestamp;
+}
 
-    var tbody = document.querySelector('#myTable tbody');
-    for (var i = 0; i < data.length; i++) {
-      var ts = new Date(decodeBase62(data[i]['id']));
-      var readable = ts.toLocaleString('en-US', {
-        year: '2-digit', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      });
-      var href = document.location.origin + '/tools/sspred/dboutput/' + data[i]['id'];
-      var tr = document.createElement('tr');
-      tr.innerHTML =
-        '<td><a class="job-link" href="' + href + '">' + data[i]['id'] + '</a></td>' +
-        '<td class="time-cell">' + readable + '</td>' +
-        '<td class="seq-cell" title="' + data[i]['seq'] + '">' + data[i]['seq'] + '</td>';
-      tbody.appendChild(tr);
-    }
-  </script>
-
-</body>
-</html>
+var tbody = document.querySelector('#myTable tbody');
+for (var i = 0; i < data.length; i++) {
+  var ts = new Date(decodeBase62(data[i].id));
+  var readable = ts.toLocaleString('en-US', {
+    year: '2-digit', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+  var href = document.location.origin + '/tools/sspred/dboutput/' + data[i].id;
+  var tr = document.createElement('tr');
+  tr.style.borderBottom = '1px solid var(--border)';
+  tr.innerHTML =
+    '<td style="padding:12px 16px;"><a class="job-link" href="' + href + '" style="font-family:monospace;font-size:0.82rem;color:var(--primary);background:#eff6ff;padding:3px 8px;border-radius:4px;text-decoration:none;font-weight:600;">' + data[i].id + '</a></td>' +
+    '<td style="padding:12px 16px;color:var(--text-secondary);font-size:0.82rem;white-space:nowrap;">' + readable + '</td>' +
+    '<td style="padding:12px 16px;font-family:monospace;font-size:0.8rem;color:var(--text-secondary);max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + data[i].seq + '">' + data[i].seq + '</td>';
+  tbody.appendChild(tr);
+}
+</script>
+{% endblock %}

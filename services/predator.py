@@ -38,18 +38,7 @@ def get(seq):
 
 		print("Predator RAW (first 2000 chars):", r.text[:2000])
 
-		# Extract prediction: find lines in <pre> blocks that are purely H/E/C chars
-		# Predator output has interleaved sequence/structure blocks; structure lines = only H/E/C (and spaces)
-		pre_blocks = re.findall(r'<pre[^>]*>(.*?)</pre>', r.text, re.DOTALL | re.IGNORECASE)
-		full_pred = ''
-		for block in pre_blocks:
-			# Strip HTML tags from block
-			clean = re.sub(r'<[^>]+>', '', block)
-			for line in clean.splitlines():
-				line_stripped = line.strip()
-				if line_stripped and re.match(r'^[HEChec ]+$', line_stripped):
-					full_pred += line_stripped.upper().replace(' ', '')
-
+		full_pred = _parse_html_response(r.text)
 		if full_pred:
 			SS.pred = full_pred.replace('-', 'C')
 			SS.conf = "No confidence (Predator)"
@@ -77,3 +66,15 @@ def get(seq):
 	print("PREDATOR::")
 	print(SS.pred)
 	return SS
+
+
+def _parse_html_response(text):
+	pre_blocks = re.findall(r'<pre[^>]*>(.*?)</pre>', text, re.DOTALL | re.IGNORECASE)
+	full_pred = ''
+	for block in pre_blocks:
+		clean = re.sub(r'<[^>]+>', '', block)
+		for line in clean.splitlines():
+			line_stripped = line.strip()
+			if line_stripped and re.match(r'^[HEChec ]+$', line_stripped):
+				full_pred += line_stripped.upper().replace(' ', '')
+	return full_pred or None

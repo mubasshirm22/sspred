@@ -6,6 +6,7 @@
 {% set is_complete = status_data.status == 'complete' %}
 {% set is_error    = status_data.status == 'error' %}
 {% set modules     = status_data.get('modules', {}) %}
+{% set module_details = status_data.get('module_details', {}) %}
 
 <!-- Page hero -->
 <section class="page-hero">
@@ -28,6 +29,9 @@
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-self:flex-start;">
         <a href="/tools/protpipe" style="padding:9px 18px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:7px;color:#fff;font-size:0.85rem;font-weight:600;text-decoration:none;">New Analysis</a>
         <a href="/tools/protpipe/archive" style="padding:9px 18px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:7px;color:#fff;font-size:0.85rem;font-weight:600;text-decoration:none;">Archive</a>
+        {% if is_complete %}
+        <a href="/tools/structmap/{{ job_id }}" style="padding:9px 18px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:7px;color:#fff;font-size:0.85rem;font-weight:600;text-decoration:none;">Open in StructMap</a>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -62,9 +66,12 @@
           ('signalp',       'Signal peptide (SignalP)',           'SignalP-4.1 via EBI — independent SP cross-validation, ~30 sec'),
           ('cdd',           'CDD conserved domains (NCBI)',      'Batch Web CD-Search — typically ~1–2 min'),
           ('scanprosite',   'ScanProsite patterns & sites',      'ExPASy ScanProsite — motifs, active sites, binding sites'),
+          ('uniprot_features', 'UniProtKB feature map',          'Curated UniProt positional features when an accession is available'),
           ('smart',         'SMART domain architecture',         'SMART web adapter — best-effort HTML parsing'),
           ('interproscan',  'InterProScan (integrative)',        'EBI InterProScan — slowest, most comprehensive (~5–8 min)'),
           ('coils',         'Coiled-coil prediction (LUPAS)',    'NPSA-PRABI LUPAS — heptad-repeat coiled-coil regions (~5–10 sec)'),
+          ('disorderpred',  'DisorderPred companion',            'Optional disorder and low-complexity view with IUPred3 / ANCHOR2 comparisons'),
+          ('sspred_companion', 'SSPred consensus companion',     'Optional secondary-structure consensus bundled into the ProtPipe report'),
           ('annotations',   'Merge & deduplicate annotations',   'Combines all sources into one clean annotation set'),
           ('figures',       'Domain architecture figure',        'PROSITE MyDomains figure (or SVG fallback)'),
         ] %}
@@ -85,42 +92,92 @@
       {% endif %}
     </div>
 
+    {% if not is_complete and not is_error %}
+    <div id="live-module-panel" class="pipe-result-card" style="margin-top:20px;">
+      <div class="pipe-result-card-title">Live Module Log</div>
+      <div id="live-module-details" style="display:grid;gap:10px;">
+        {% for key, detail in module_details.items() %}
+        {% if detail.get('status') and detail.get('status') != 'pending' %}
+        <div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;">
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+            <strong style="font-size:0.88rem;text-transform:capitalize;">{{ key }}</strong>
+            <span style="font-size:0.74rem;color:{% if detail.get('status') == 'error' %}#dc2626{% elif detail.get('status') == 'running' %}#2563eb{% else %}#059669{% endif %};font-weight:700;text-transform:uppercase;">{{ detail.get('status') }}</span>
+          </div>
+          {% if detail.get('summary') %}
+          <div style="font-size:0.84rem;color:var(--text-secondary);margin-top:6px;">{{ detail.get('summary') }}</div>
+          {% endif %}
+          {% if detail.get('raw_error') %}
+          <div style="margin-top:8px;padding:8px 10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;font-size:0.77rem;color:#9a3412;font-family:monospace;">{{ detail.get('raw_error') }}</div>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
     <!-- ── Partial results card — shown while pipeline is still running ── -->
-    {% if not is_complete and not is_error and summary.get('retrieval') %}
+    {% if not is_complete and not is_error %}
+    {% set _preq   = summary.get('request', {}) %}
     {% set _pret   = summary.get('retrieval', {}) %}
     {% set _pprops = summary.get('properties', {}) %}
-    <div class="pipe-result-card" style="margin-top:20px;border-left:3px solid #2563eb;">
+    <div id="partial-results-card" class="pipe-result-card" style="margin-top:20px;border-left:3px solid #2563eb;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-        <div class="pipe-result-card-title" style="margin:0;">Sequence Retrieved</div>
+        <div class="pipe-result-card-title" id="partial-card-title" style="margin:0;">{% if _pret %}Sequence Retrieved{% else %}Job Started{% endif %}</div>
         <span style="font-size:0.75rem;background:#eff6ff;color:#2563eb;padding:2px 9px;border-radius:999px;font-weight:600;">Analysis in progress…</span>
       </div>
-      <div style="display:flex;gap:20px;flex-wrap:wrap;">
-        {% if _pret.get('header') or _pret.get('accession') %}
-        <div>
+      <div id="partial-results-grid" style="display:flex;gap:20px;flex-wrap:wrap;">
+        <div id="partial-submitted-wrap" {% if not _preq.get('submitted_value') %}style="display:none;"{% endif %}>
+          <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-light);margin-bottom:3px;">Submitted Input</div>
+          <div id="partial-submitted-value" style="font-size:0.9rem;font-weight:600;max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ _preq.get('submitted_value', '') }}</div>
+        </div>
+        <div id="partial-identifier-wrap" {% if not (_pret.get('header') or _pret.get('accession')) %}style="display:none;"{% endif %}>
           <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-light);margin-bottom:3px;">Identifier</div>
-          <div style="font-size:0.9rem;font-weight:600;">{{ _pret.get('header') or _pret.get('accession','—') }}</div>
+          <div id="partial-identifier-value" style="font-size:0.9rem;font-weight:600;">{{ _pret.get('header') or _pret.get('accession','—') }}</div>
         </div>
-        {% endif %}
-        {% if _pprops.get('length') %}
-        <div>
+        <div id="partial-length-wrap" {% if not _pprops.get('length') %}style="display:none;"{% endif %}>
           <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-light);margin-bottom:3px;">Length</div>
-          <div style="font-size:0.9rem;font-weight:600;">{{ _pprops.length }} aa</div>
+          <div id="partial-length-value" style="font-size:0.9rem;font-weight:600;">{% if _pprops.get('length') %}{{ _pprops.length }} aa{% endif %}</div>
         </div>
-        {% endif %}
-        {% if _pprops.get('mw') %}
-        <div>
+        <div id="partial-mw-wrap" {% if not _pprops.get('molecular_weight_da') %}style="display:none;"{% endif %}>
           <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-light);margin-bottom:3px;">Mol. Weight</div>
-          <div style="font-size:0.9rem;font-weight:600;">{{ "%.1f"|format(_pprops.mw / 1000) }} kDa</div>
+          <div id="partial-mw-value" style="font-size:0.9rem;font-weight:600;">{% if _pprops.get('molecular_weight_da') %}{{ "%.1f"|format(_pprops.molecular_weight_da / 1000) }} kDa{% endif %}</div>
         </div>
-        {% endif %}
-        {% if _pprops.get('pi') %}
-        <div>
+        <div id="partial-pi-wrap" {% if _pprops.get('isoelectric_point') is none %}style="display:none;"{% endif %}>
           <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-light);margin-bottom:3px;">pI</div>
-          <div style="font-size:0.9rem;font-weight:600;">{{ "%.2f"|format(_pprops.pi) }}</div>
+          <div id="partial-pi-value" style="font-size:0.9rem;font-weight:600;">{% if _pprops.get('isoelectric_point') is not none %}{{ "%.2f"|format(_pprops.isoelectric_point) }}{% endif %}</div>
         </div>
+        <div id="partial-modules-wrap" {% if not _preq.get('enabled_modules') %}style="display:none;"{% endif %}>
+          <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-light);margin-bottom:3px;">Modules</div>
+          <div id="partial-modules-value" style="font-size:0.88rem;font-weight:600;max-width:440px;">{{ _preq.get('enabled_modules', []) | join(', ') }}</div>
+        </div>
+      </div>
+      <div id="partial-results-note" style="margin-top:10px;font-size:0.8rem;color:var(--text-light);">
+        {% if _pret %}
+        Retrieval is complete. Additional annotations will appear as the remote tools finish.
+        {% else %}
+        ProtPipe is validating your input and fetching the primary sequence now. This section updates automatically as soon as the first files are written.
         {% endif %}
       </div>
-      <div style="margin-top:10px;font-size:0.8rem;color:var(--text-light);">Full results will appear automatically when analysis completes.</div>
+      <div id="partial-runtime-note" {% if not _preq.get('runtime_hint') %}style="display:none;margin-top:6px;font-size:0.8rem;color:var(--text-secondary);" {% else %}style="margin-top:6px;font-size:0.8rem;color:var(--text-secondary);" {% endif %}>{{ _preq.get('runtime_hint', '') }}</div>
+    </div>
+    {% endif %}
+
+    {% if service_status %}
+    <div class="pipe-result-card" style="margin-top:20px;margin-bottom:18px;">
+      <div class="pipe-result-card-title">ProtPipe Service Status</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;">
+        {% for name, item in service_status.items() %}
+        <div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:#fff;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <strong style="font-size:0.85rem;color:var(--text);">{{ name }}</strong>
+            <span class="status-badge {% if item.status == 'UP' %}up{% elif item.status == 'OFFLINE' %}down{% elif item.tier == 'experimental' or item.tier == 'slow' %}warning{% else %}down{% endif %}" style="font-size:10px;padding:2px 7px;">{{ item.status }}</span>
+          </div>
+          <div style="font-size:0.74rem;color:var(--text-light);text-transform:uppercase;margin-top:5px;">{{ item.tier }}</div>
+          <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px;line-height:1.4;">{{ item.note }}</div>
+        </div>
+        {% endfor %}
+      </div>
     </div>
     {% endif %}
 
@@ -135,12 +192,16 @@
     {% set phob          = summary.get('phobius', {}) %}
     {% set sigp          = summary.get('signalp', {}) %}
     {% set errs          = summary.get('module_errors', {}) %}
+    {% set warns         = summary.get('module_warnings', {}) %}
     {% set is_partial    = summary.get('_partial', false) %}
+    {% set request_meta  = summary.get('_request', {}) %}
     {% set annotations = summary.get('annotations', []) %}
     {% set low_conf    = summary.get('low_confidence_annotations', []) %}
     {% set raw_anns    = summary.get('raw_annotations', []) %}
     {% set ann_debug   = summary.get('annotation_debug', {}) %}
     {% set ann_summary = summary.get('annotation_summary', {}) %}
+    {% set companion_disorder = summary.get('companion_disorder', {}) %}
+    {% set companion_sspred = summary.get('companion_sspred', {}) %}
     {% set ann_domains = annotations | selectattr('feature_type', 'in', ['domain','family','repeat','motif','coiled_coil','low_complexity','helix','strand']) | list %}
     {% set ann_sites   = annotations | selectattr('feature_type', 'in', ['active_site','binding_site','metal_binding','disulfide','site']) | list %}
     {% set ann_sp      = annotations | selectattr('feature_type', 'equalto', 'signal_peptide') | list %}
@@ -157,6 +218,7 @@
       {% if summary.get('figure_ok') %}
       <a class="pipe-dl-btn" href="/tools/protpipe/download/{{ job_id }}/figure">Domain figure</a>
       {% endif %}
+      <a class="pipe-dl-btn" href="/tools/structmap/{{ job_id }}">Open StructMap</a>
       <button class="pipe-copy-btn" onclick="copyReport()" style="margin-left:auto;" id="copy-btn">Copy report</button>
     </div>
 
@@ -191,6 +253,12 @@
         Topology
         {% if phob %}<span class="tab-check">✓</span>{% elif errs.get('phobius') %}<span class="tab-warn">!</span>{% endif %}
       </button>
+      {% if companion_disorder or companion_sspred or errs.get('disorderpred') or errs.get('sspred_companion') %}
+      <button class="pipe-tab-btn" onclick="showTab('companions', this)">
+        Companion Analyses
+        {% if companion_disorder or companion_sspred %}<span class="tab-check">✓</span>{% else %}<span class="tab-warn">!</span>{% endif %}
+      </button>
+      {% endif %}
       {% if summary.get('motif_results') %}
       <button class="pipe-tab-btn" id="tab-btn-motifs" onclick="showTab('motifs', this)">
         Motifs
@@ -244,7 +312,71 @@
           <div class="pipe-stat"><div class="pipe-stat-label">TM helices</div><div class="pipe-stat-value">{{ ann_tm | length or phob.get('tm_count', '—') }}</div></div>
           <div class="pipe-stat"><div class="pipe-stat-label">Signal peptide</div><div class="pipe-stat-value">{% if ann_sp %}Yes{% elif phob.get('has_signal_peptide') %}Yes{% elif phob.get('has_signal_peptide') == False %}No{% else %}—{% endif %}</div></div>
         </div>
+        {% if request_meta.get('enabled_modules') or request_meta.get('runtime_hint') %}
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:0.83rem;color:var(--text-secondary);line-height:1.6;">
+          {% if request_meta.get('enabled_modules') %}
+          <div><strong style="color:var(--text);">Run profile:</strong> {{ request_meta.get('enabled_modules', []) | join(', ') }}</div>
+          {% endif %}
+          {% if request_meta.get('runtime_hint') %}
+          <div>{{ request_meta.get('runtime_hint') }}</div>
+          {% endif %}
+        </div>
+        {% endif %}
       </div>
+
+      {% if companion_disorder or companion_sspred or errs.get('disorderpred') or errs.get('sspred_companion') %}
+      <div class="pipe-result-card">
+        <div class="pipe-result-card-title">Attached Companion Analyses</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;">
+          <div style="border:1px solid var(--border);border-radius:12px;padding:14px 16px;background:#fff;">
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+              <strong style="font-size:0.92rem;color:var(--text);">DisorderPred</strong>
+              {% if companion_disorder %}
+              <span class="status-badge up" style="font-size:10px;padding:2px 7px;">READY</span>
+              {% elif errs.get('disorderpred') %}
+              <span class="status-badge down" style="font-size:10px;padding:2px 7px;">ERROR</span>
+              {% else %}
+              <span class="status-badge" style="font-size:10px;padding:2px 7px;">OFF</span>
+              {% endif %}
+            </div>
+            {% if companion_disorder %}
+            <div style="margin-top:8px;font-size:0.83rem;color:var(--text-secondary);line-height:1.6;">
+              Mean disorder {{ companion_disorder.mean_disorder }} · disordered fraction {{ (companion_disorder.disordered_fraction * 100) | round(1) }}%
+            </div>
+            <div style="margin-top:8px;font-size:0.82rem;color:var(--text-light);">{{ companion_disorder.disordered_regions | length }} disordered region(s) · {{ companion_disorder.low_complexity_regions | length }} low-complexity segment(s)</div>
+            {% elif errs.get('disorderpred') %}
+            <div style="margin-top:8px;font-size:0.82rem;color:#b45309;">{{ errs.get('disorderpred') }}</div>
+            {% else %}
+            <div style="margin-top:8px;font-size:0.82rem;color:var(--text-light);">Not selected for this job.</div>
+            {% endif %}
+          </div>
+          <div style="border:1px solid var(--border);border-radius:12px;padding:14px 16px;background:#fff;">
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+              <strong style="font-size:0.92rem;color:var(--text);">SSPred consensus</strong>
+              {% if companion_sspred %}
+              <span class="status-badge up" style="font-size:10px;padding:2px 7px;">READY</span>
+              {% elif errs.get('sspred_companion') %}
+              <span class="status-badge down" style="font-size:10px;padding:2px 7px;">ERROR</span>
+              {% else %}
+              <span class="status-badge" style="font-size:10px;padding:2px 7px;">OFF</span>
+              {% endif %}
+            </div>
+            {% if companion_sspred %}
+            <div style="margin-top:8px;font-size:0.83rem;color:var(--text-secondary);line-height:1.6;">
+              {{ companion_sspred.service_count }} contributing predictor{{ '' if companion_sspred.service_count == 1 else 's' }} · mode {{ companion_sspred.mode | replace('_', ' ') }}
+            </div>
+            <div style="margin-top:8px;font-size:0.82rem;color:var(--text-light);">
+              H {{ (companion_sspred.counts.helix_fraction * 100) | round(1) }}% · E {{ (companion_sspred.counts.strand_fraction * 100) | round(1) }}% · C {{ (companion_sspred.counts.coil_fraction * 100) | round(1) }}%
+            </div>
+            {% elif errs.get('sspred_companion') %}
+            <div style="margin-top:8px;font-size:0.82rem;color:#b45309;">{{ errs.get('sspred_companion') }}</div>
+            {% else %}
+            <div style="margin-top:8px;font-size:0.82rem;color:var(--text-light);">Not selected for this job.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
 
       <!-- Domain figure thumbnail in overview -->
       {% if summary.get('figure_ok') %}
@@ -280,7 +412,7 @@
       {% endif %}
 
       <!-- Module errors summary -->
-      {% if errs %}
+      {% if errs or warns %}
       <div class="pipe-result-card" style="border-color:#fde68a;">
         <div class="pipe-result-card-title" style="color:var(--warning);">Warnings</div>
         {% for mod, msg in errs.items() %}
@@ -292,10 +424,106 @@
           {% endif %}
         </div>
         {% endfor %}
+        {% for mod, msg in warns.items() %}
+        <div class="pipe-endpoint-note" style="margin-top:8px;background:#fffbeb;border-color:#fde68a;">
+          <strong>{{ mod | title }}</strong>
+          {{ msg }}
+        </div>
+        {% endfor %}
       </div>
       {% endif %}
 
     </div>
+
+    {% if companion_disorder or companion_sspred or errs.get('disorderpred') or errs.get('sspred_companion') %}
+    <div id="tab-companions" class="pipe-tab-panel">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;">
+        <div class="pipe-result-card" style="margin-bottom:0;">
+          <div class="pipe-result-card-title">DisorderPred Companion</div>
+          {% if companion_disorder %}
+          <div class="pipe-stat-grid" style="margin-bottom:16px;">
+            <div class="pipe-stat"><div class="pipe-stat-label">Mean disorder</div><div class="pipe-stat-value">{{ companion_disorder.mean_disorder }}</div></div>
+            <div class="pipe-stat"><div class="pipe-stat-label">Disordered fraction</div><div class="pipe-stat-value">{{ (companion_disorder.disordered_fraction * 100) | round(1) }}%</div></div>
+            <div class="pipe-stat"><div class="pipe-stat-label">Regions</div><div class="pipe-stat-value">{{ companion_disorder.disordered_regions | length }}</div></div>
+            <div class="pipe-stat"><div class="pipe-stat-label">Low complexity</div><div class="pipe-stat-value">{{ companion_disorder.low_complexity_regions | length }}</div></div>
+          </div>
+          {% if companion_disorder.disordered_regions %}
+          <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;color:var(--text-light);margin-bottom:10px;">Disordered regions</div>
+          <div style="display:grid;gap:8px;">
+            {% for region in companion_disorder.disordered_regions %}
+            <div style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:#fff;">
+              <strong>{{ region.start }}–{{ region.end }}</strong>
+              <span style="font-size:0.82rem;color:var(--text-secondary);margin-left:8px;">mean {{ region.mean_score }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p style="font-size:0.84rem;color:var(--text-light);">No long disordered regions passed the default threshold.</p>
+          {% endif %}
+          {% if companion_disorder.comparisons %}
+          <div style="margin-top:16px;font-size:0.78rem;font-weight:700;text-transform:uppercase;color:var(--text-light);margin-bottom:10px;">Comparison predictors</div>
+          <div style="display:grid;gap:8px;">
+            {% for item in companion_disorder.comparisons %}
+            <div style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:#fff;">
+              <div style="display:flex;justify-content:space-between;gap:8px;">
+                <strong>{{ item.name }}</strong>
+                <span class="status-badge {% if item.status == 'ok' %}up{% else %}down{% endif %}" style="font-size:10px;padding:2px 7px;">{{ item.status | upper }}</span>
+              </div>
+              {% if item.status == 'ok' %}
+              <div style="margin-top:6px;font-size:0.82rem;color:var(--text-secondary);">Mean {{ item.mean_score }} · fraction {{ (item.disordered_fraction * 100) | round(1) }}%</div>
+              {% else %}
+              <div style="margin-top:6px;font-size:0.82rem;color:#b45309;">{{ item.error }}</div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% elif errs.get('disorderpred') %}
+          <div class="pipe-endpoint-note">{{ errs.get('disorderpred') }}</div>
+          {% else %}
+          <p style="font-size:0.84rem;color:var(--text-light);">DisorderPred was not selected for this ProtPipe run.</p>
+          {% endif %}
+        </div>
+
+        <div class="pipe-result-card" style="margin-bottom:0;">
+          <div class="pipe-result-card-title">SSPred Consensus Companion</div>
+          {% if companion_sspred %}
+          <div class="pipe-stat-grid" style="margin-bottom:16px;">
+            <div class="pipe-stat"><div class="pipe-stat-label">Contributors</div><div class="pipe-stat-value">{{ companion_sspred.service_count }}</div></div>
+            <div class="pipe-stat"><div class="pipe-stat-label">Helix</div><div class="pipe-stat-value">{{ (companion_sspred.counts.helix_fraction * 100) | round(1) }}%</div></div>
+            <div class="pipe-stat"><div class="pipe-stat-label">Strand</div><div class="pipe-stat-value">{{ (companion_sspred.counts.strand_fraction * 100) | round(1) }}%</div></div>
+            <div class="pipe-stat"><div class="pipe-stat-label">Coil</div><div class="pipe-stat-value">{{ (companion_sspred.counts.coil_fraction * 100) | round(1) }}%</div></div>
+          </div>
+          <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;color:var(--text-light);margin-bottom:8px;">Consensus prediction</div>
+          <div class="pipe-seq-display" style="font-size:0.82rem;">{{ companion_sspred.consensus }}</div>
+          {% if companion_sspred.confidence %}
+          <div style="margin-top:10px;font-size:0.78rem;font-weight:700;text-transform:uppercase;color:var(--text-light);margin-bottom:8px;">Consensus support</div>
+          <div class="pipe-seq-display" style="font-size:0.82rem;">{{ companion_sspred.confidence }}</div>
+          {% endif %}
+          {% if companion_sspred.services %}
+          <div style="margin-top:16px;font-size:0.78rem;font-weight:700;text-transform:uppercase;color:var(--text-light);margin-bottom:10px;">Contributing services</div>
+          <table class="pipe-table">
+            <thead><tr><th>Service</th><th>Status</th><th>Prediction</th></tr></thead>
+            <tbody>
+              {% for item in companion_sspred.services %}
+              <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.label }}</td>
+                <td style="font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;font-size:0.76rem;color:var(--text-secondary);">{{ item.prediction[:32] ~ ('…' if item.prediction|length > 32 else '') if item.prediction else item.raw_error or '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% endif %}
+          {% elif errs.get('sspred_companion') %}
+          <div class="pipe-endpoint-note">{{ errs.get('sspred_companion') }}</div>
+          {% else %}
+          <p style="font-size:0.84rem;color:var(--text-light);">SSPred consensus was not selected for this ProtPipe run.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
 
     <!-- ────────────── TAB: Sequence & Properties ────────────── -->
     <div id="tab-sequence" class="pipe-tab-panel">
@@ -1371,6 +1599,8 @@
 <script>
 const jobId = {{ job_id | tojson }};
 const finalStatus = {{ status_data.status | tojson }};
+const initialPartial = {{ summary | tojson if (not is_complete and not is_error) else '{}' }};
+const initialModuleDetails = {{ module_details | tojson }};
 
 // ── Save to localStorage archive ──────────────────────────────
 if (finalStatus === 'complete' || finalStatus === 'running') {
@@ -1393,12 +1623,15 @@ const textLabels = { complete:'Done', running:'Running…', error:'Error', skipp
 const stepClasses = { complete:'step-complete', running:'step-running', error:'step-error', skipped:'step-skipped', pending:'' };
 
 if (finalStatus !== 'complete' && finalStatus !== 'error') { poll(); }
+renderModuleDetails(initialModuleDetails);
 
 function poll() {
   fetch('/tools/protpipe/status/' + jobId)
     .then(r => r.json())
     .then(data => {
       updateSteps(data.modules || {});
+      renderModuleDetails(data.module_details || {});
+      updatePartialCard(data.partial || {});
       if (data.status === 'complete') {
         const badge = document.getElementById('hero-status-badge');
         if (badge) { badge.style.background='#dcfce7'; badge.style.color='#15803d'; badge.textContent='Complete'; }
@@ -1413,6 +1646,46 @@ function poll() {
       setTimeout(poll, 5000);
     })
     .catch(() => { setTimeout(poll, 8000); });
+}
+
+function renderModuleDetails(details) {
+  const wrap = document.getElementById('live-module-details');
+  if (!wrap) return;
+  const entries = Object.entries(details || {}).filter(([_, detail]) => detail && detail.status && detail.status !== 'pending');
+  if (!entries.length) {
+    wrap.innerHTML = '<div style="font-size:0.84rem;color:var(--text-light);">Module details will appear here as soon as the first module writes a status update.</div>';
+    return;
+  }
+  const rank = { running: 0, error: 1, complete: 2, skipped: 3 };
+  entries.sort((a, b) => (rank[a[1].status] ?? 9) - (rank[b[1].status] ?? 9) || a[0].localeCompare(b[0]));
+  wrap.innerHTML = entries.map(([key, detail]) => {
+    const color = detail.status === 'error' ? '#dc2626' : (detail.status === 'running' ? '#2563eb' : '#059669');
+    const raw = detail.raw_error
+      ? `<div style="margin-top:8px;padding:8px 10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;font-size:0.77rem;color:#9a3412;font-family:monospace;">${escapeHtml(detail.raw_error)}</div>`
+      : '';
+    const duration = detail.duration_seconds != null
+      ? `<div style="font-size:0.74rem;color:var(--text-light);margin-top:6px;">${detail.duration_seconds}s</div>`
+      : '';
+    return `
+      <div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+          <strong style="font-size:0.88rem;text-transform:capitalize;">${escapeHtml(key)}</strong>
+          <span style="font-size:0.74rem;color:${color};font-weight:700;text-transform:uppercase;">${escapeHtml(detail.status)}</span>
+        </div>
+        ${detail.summary ? `<div style="font-size:0.84rem;color:var(--text-secondary);margin-top:6px;">${escapeHtml(detail.summary)}</div>` : ''}
+        ${duration}
+        ${raw}
+      </div>`;
+  }).join('');
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function updateProgressBar(modules) {
@@ -1437,6 +1710,59 @@ function updateSteps(modules) {
   }
   updateProgressBar(modules);
 }
+
+function updatePartialCard(partial) {
+  const card = document.getElementById('partial-results-card');
+  if (!card || !partial) return;
+
+  const request = partial.request || {};
+  const retrieval = partial.retrieval || {};
+  const properties = partial.properties || {};
+
+  const title = document.getElementById('partial-card-title');
+  const note = document.getElementById('partial-results-note');
+
+  if (title) {
+    title.textContent = Object.keys(retrieval).length ? 'Sequence Retrieved' : 'Job Started';
+  }
+  if (note) {
+    note.textContent = Object.keys(retrieval).length
+      ? 'Retrieval is complete. Additional annotations will appear as the remote tools finish.'
+      : 'ProtPipe is validating your input and fetching the primary sequence now. This section updates automatically as soon as the first files are written.';
+  }
+
+  setPartialField('partial-submitted-wrap', 'partial-submitted-value', request.submitted_value || '');
+  setPartialField('partial-identifier-wrap', 'partial-identifier-value', retrieval.header || retrieval.accession || '');
+  setPartialField('partial-length-wrap', 'partial-length-value', properties.length ? `${properties.length} aa` : '');
+  setPartialField('partial-mw-wrap', 'partial-mw-value', properties.molecular_weight_da ? `${(properties.molecular_weight_da / 1000).toFixed(1)} kDa` : '');
+  setPartialField('partial-pi-wrap', 'partial-pi-value', properties.isoelectric_point != null ? Number(properties.isoelectric_point).toFixed(2) : '');
+  setPartialField('partial-modules-wrap', 'partial-modules-value', Array.isArray(request.enabled_modules) ? request.enabled_modules.join(', ') : '');
+  const runtimeNote = document.getElementById('partial-runtime-note');
+  if (runtimeNote) {
+    if (request.runtime_hint) {
+      runtimeNote.style.display = '';
+      runtimeNote.textContent = request.runtime_hint;
+    } else {
+      runtimeNote.style.display = 'none';
+      runtimeNote.textContent = '';
+    }
+  }
+}
+
+function setPartialField(wrapperId, valueId, value) {
+  const wrap = document.getElementById(wrapperId);
+  const el = document.getElementById(valueId);
+  if (!wrap || !el) return;
+  if (value) {
+    wrap.style.display = '';
+    el.textContent = value;
+  } else {
+    wrap.style.display = 'none';
+    el.textContent = '';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => updatePartialCard(initialPartial));
 
 // ── Tabs ─────────────────────────────────────────────────────
 function showTab(id, btn) {

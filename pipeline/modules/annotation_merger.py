@@ -67,6 +67,7 @@ def merge(
     signalp_result:      Optional[dict] = None,
     cdd_result:          Optional[dict] = None,
     scanprosite_result:  Optional[dict] = None,
+    uniprot_result:      Optional[dict] = None,
     smart_result:        Optional[dict] = None,
     interproscan_result: Optional[dict] = None,
     coils_result:        Optional[dict] = None,
@@ -111,6 +112,7 @@ def merge(
     _collect(signalp_result,      "SignalP",       _normalize_signalp)
     _collect(cdd_result,          "CDD")
     _collect(scanprosite_result,  "ScanProsite")
+    _collect(uniprot_result,      "UniProtKB")
     _collect(smart_result,        "SMART")
     _collect(interproscan_result, "InterProScan")
     _collect(coils_result,        "LUPAS")

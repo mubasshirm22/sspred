@@ -59,25 +59,38 @@ def get(seq):
 	email_id, message = batchtools.emailRequestWait(session, query, "Name:", randName, "SSPro Not Ready", 60, 2700)
 	
 	if email_id:
-		message_parts = message.splitlines()
-		
-		index = 0 #current line
-		finished_scrape = False
-		
-		while index < len(message_parts) and not finished_scrape:
-			index += 1
-			if message_parts[index] == "Predicted Secondary Structure (3 Class):":
-				while message_parts[index]: #while not blank line
-					index += 1
-					SS.pred += message_parts[index]
-				finished_scrape = True
-
-		SS.conf = "SSPro Does Not Provide Any Conf" 
-		SS.status = 3
-		print("SSpro Complete")
+		pred = _parse_email_message(message)
+		if pred:
+			SS.pred = pred
+			SS.conf = "SSPro Does Not Provide Any Conf" 
+			SS.status = 3
+			print("SSpro Complete")
+		else:
+			SS.pred += "Could not parse SSPro email output"
+			SS.conf += "Could not parse SSPro email output"
+			SS.status = 2
+			print("SSPro failed: parse error")
 	else:
 		SS.pred += "failed to respond after 45 minutes"
 		SS.conf += "failed to respond after 45 minutes"
 		SS.status = 2 #error status
 		print("SSPro failed: No response after 45 minutes")
 	return SS
+
+
+def _parse_email_message(message):
+	message_parts = message.splitlines()
+	index = 0
+	pred = []
+	while index < len(message_parts):
+		if message_parts[index] == "Predicted Secondary Structure (3 Class):":
+			index += 1
+			while index < len(message_parts) and message_parts[index]:
+				line = message_parts[index].strip()
+				if line and not line.startswith("Confidence"):
+					pred.append(line)
+				index += 1
+			break
+		index += 1
+	output = "".join(pred)
+	return output or None

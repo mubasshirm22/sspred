@@ -13,22 +13,22 @@
 <section class="lab-section">
   <div class="lab-container">
 
-    <!-- Active tools -->
-    <p class="section-label">Active Tools</p>
-    <h2 class="section-title" style="margin-bottom:28px;">Available Now</h2>
-    <div class="tools-active-grid">
+    <p class="section-label">Flagship Tools</p>
+    <h2 class="section-title" style="margin-bottom:10px;">Core Lab Platforms</h2>
+    <p class="section-subtitle" style="margin-bottom:28px;max-width:760px;">SSPred aggregates secondary-structure predictions, ProtPipe assembles a broader protein-annotation report, and AlignNotate produces publication-quality annotated alignment figures.</p>
+    <div class="tools-active-grid" style="margin-bottom:34px;">
 
       <div class="active-tool-card">
         <div class="tool-title-row">
           <h3>SSPred</h3>
           <span class="badge badge-live">Live</span>
         </div>
-        <p>Consensus secondary structure prediction aggregating 8 servers — PSIPred, JPred4, SABLE, SSPro, YASPIN, PHDpsi, PROFsec, and Predator — with majority voting, color-coded output, and real-time progress tracking.</p>
+        <p>Consensus secondary structure prediction combining PSIPRED, JPred4, SABLE, SSPro, YASPIN, Predator, and NetSurfP-2.0 with majority voting, color-coded output, and real-time progress tracking.</p>
         <div class="tool-tags">
           <span class="tool-tag">Secondary Structure</span>
-          <span class="tool-tag">8 Servers</span>
+          <span class="tool-tag">7 Servers</span>
           <span class="tool-tag">PDB Lookup</span>
-          <span class="tool-tag">30–4000 AA</span>
+          <span class="tool-tag">40–4000 AA</span>
         </div>
         <div class="card-actions">
           <a href="/tools/sspred" class="btn-lab btn-lab-primary btn-sm">Launch SSPred →</a>
@@ -53,8 +53,39 @@
           <a href="/tools/protpipe" class="btn-lab btn-lab-primary btn-sm" style="background:var(--accent-teal);">Launch ProtPipe →</a>
           <a href="/tools/protpipe/archive" class="btn-lab btn-lab-outline btn-sm">Job Archive</a>
         </div>
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+          <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:var(--text-light);margin-bottom:8px;">Attached Subtool</div>
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:0.92rem;font-weight:700;color:var(--text);">StructMap</div>
+              <div style="font-size:0.82rem;color:var(--text-secondary);line-height:1.45;">Open a completed ProtPipe job in a cleaner architecture-first view with domains, topology, motifs, and AlphaFold / UniProt links.</div>
+            </div>
+            <a href="/tools/structmap" class="btn-lab btn-lab-outline btn-sm" style="white-space:nowrap;">Open StructMap →</a>
+          </div>
+        </div>
       </div>
 
+      <div class="active-tool-card">
+        <div class="tool-title-row">
+          <h3>AlignNotate</h3>
+          <span class="badge badge-beta">External</span>
+        </div>
+        <p>Interactive multiple sequence alignment annotation tool with publication-style SVG rendering, residue-level interaction, region boxes, labels, and direct SVG or PNG export.</p>
+        <div class="tool-tags">
+          <span class="tool-tag">MSA Annotation</span>
+          <span class="tool-tag">SVG Export</span>
+          <span class="tool-tag">Clustal .aln</span>
+          <span class="tool-tag">Publication-ready</span>
+        </div>
+        <div class="card-actions">
+          <a href="https://alignnotate.vercel.app" target="_blank" rel="noopener" class="btn-lab btn-lab-primary btn-sm" style="background:#6d28d9;">Launch AlignNotate ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <p class="section-label">Specialized Tools</p>
+    <h2 class="section-title" style="margin-bottom:28px;">Focused Utilities</h2>
+    <div class="tools-active-grid">
       <div class="active-tool-card">
         <div class="tool-title-row">
           <h3>Motif Search</h3>
@@ -74,23 +105,21 @@
 
       <div class="active-tool-card">
         <div class="tool-title-row">
-          <h3>AlignNotate</h3>
+          <h3>DisorderPred</h3>
           <span class="badge badge-beta">Beta</span>
         </div>
-        <p>Interactive multiple sequence alignment annotation tool. Publication-style SVG alignment rendering with direct residue interaction — click to add highlights, region boxes, and text labels anchored to alignment coordinates. Export as SVG or PNG.</p>
+        <p>Focused intrinsic-disorder analysis using NetSurfP-2.0 plus IUPred3/ANCHOR2 comparison tracks. Highlights disordered regions, low-complexity segments, and flexible binding-prone segments.</p>
         <div class="tool-tags">
-          <span class="tool-tag">MSA Annotation</span>
-          <span class="tool-tag">SVG Export</span>
-          <span class="tool-tag">Clustal .aln</span>
-          <span class="tool-tag">Publication-ready</span>
+          <span class="tool-tag">Intrinsic Disorder</span>
+          <span class="tool-tag">IUPred3</span>
+          <span class="tool-tag">ANCHOR2</span>
+          <span class="tool-tag">SS Overlay</span>
         </div>
         <div class="card-actions">
-          <a href="https://alignnotate.vercel.app" target="_blank" rel="noopener" class="btn-lab btn-lab-primary btn-sm" style="background:#6d28d9;">Launch AlignNotate ↗</a>
+          <a href="/tools/disorderpred" class="btn-lab btn-lab-primary btn-sm" style="background:var(--accent-purple);">Launch DisorderPred →</a>
         </div>
       </div>
-
     </div>
-
 
   </div>
 </section>

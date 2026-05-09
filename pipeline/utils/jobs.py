@@ -30,7 +30,13 @@ def create_job_dir(job_id: str) -> str:
     return d
 
 
-def _write_status(d: str, status: str, modules: dict = None, error: str = ""):
+def _write_status(
+    d: str,
+    status: str,
+    modules: dict = None,
+    error: str = "",
+    module_details: dict = None,
+):
     path = os.path.join(d, "status.json")
     existing = {}
     if os.path.exists(path):
@@ -47,6 +53,12 @@ def _write_status(d: str, status: str, modules: dict = None, error: str = ""):
     if modules is not None:
         existing.setdefault("modules", {})
         existing["modules"].update(modules)
+    if module_details is not None:
+        existing.setdefault("module_details", {})
+        for module_name, details in module_details.items():
+            existing["module_details"].setdefault(module_name, {})
+            if isinstance(details, dict):
+                existing["module_details"][module_name].update(details)
     if error:
         existing["error"] = error
 
@@ -62,6 +74,17 @@ def set_status(job_id: str, status: str, error: str = ""):
 def set_module_status(job_id: str, module: str, status: str):
     """Update the status of one module (pending / running / complete / error / skipped)."""
     _write_status(job_dir(job_id), _get_top_status(job_id), modules={module: status})
+
+
+def set_module_detail(job_id: str, module: str, **details):
+    """Update rich metadata for one module without changing its status shape."""
+    if not details:
+        return
+    _write_status(
+        job_dir(job_id),
+        _get_top_status(job_id),
+        module_details={module: details},
+    )
 
 
 def _get_top_status(job_id: str) -> str:
@@ -112,3 +135,44 @@ def read_result(job_id: str, filename: str):
 def get_summary(job_id: str) -> dict:
     """Return the combined summary.json for a completed job."""
     return read_result(job_id, "summary.json") or {}
+
+
+def list_jobs(limit: int = 100):
+    """Return recent jobs from the filesystem archive."""
+    if not os.path.isdir(JOBS_DIR):
+        return []
+
+    entries = []
+    for job_id in os.listdir(JOBS_DIR):
+        job_path = job_dir(job_id)
+        if not os.path.isdir(job_path):
+            continue
+        try:
+            sort_key = os.path.getmtime(os.path.join(job_path, "status.json"))
+        except OSError:
+            sort_key = os.path.getmtime(job_path)
+        entries.append((sort_key, job_id))
+
+    jobs = []
+    for _, job_id in sorted(entries, reverse=True):
+        status = get_status(job_id)
+        summary = get_summary(job_id)
+        retrieval = summary.get("retrieval", {}) if isinstance(summary, dict) else {}
+        input_label = (
+            retrieval.get("header")
+            or retrieval.get("resolved_acc")
+            or retrieval.get("accession")
+            or retrieval.get("resolved_from")
+            or "Sequence input"
+        )
+        jobs.append({
+            "job_id": job_id,
+            "status": status.get("status", "unknown"),
+            "started": status.get("started", ""),
+            "finished": status.get("finished", ""),
+            "input_label": input_label,
+            "length": (summary.get("properties") or {}).get("length"),
+        })
+        if len(jobs) >= limit:
+            break
+    return jobs

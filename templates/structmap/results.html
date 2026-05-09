@@ -1,0 +1,170 @@
+{% extends "lab/lab_base.html" %}
+{% block title %}StructMap — {{ job_id }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.structmap-track {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 18px;
+}
+.structmap-rail {
+  position: relative;
+  min-height: 56px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background:
+    linear-gradient(to right, rgba(15,23,42,.03) 0%, rgba(15,23,42,.03) 100%),
+    repeating-linear-gradient(to right, transparent 0, transparent calc(10% - 1px), rgba(148,163,184,.18) calc(10% - 1px), rgba(148,163,184,.18) 10%);
+}
+.structmap-feature {
+  position: absolute;
+  top: 14px;
+  height: 28px;
+  border-radius: 999px;
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,.2);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.structmap-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--text-light);
+}
+.structmap-link-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.structmap-link-row a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+@media (max-width: 800px) {
+  .structmap-track {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="lab-container">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+      <div>
+        <h1>StructMap</h1>
+        <p>{{ map_data.title }}</p>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a href="/tools/protpipe/results/{{ job_id }}" style="padding:9px 18px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:7px;color:#fff;font-size:0.85rem;font-weight:600;text-decoration:none;">Back to ProtPipe</a>
+        <a href="/tools/structmap" style="padding:9px 18px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:7px;color:#fff;font-size:0.85rem;font-weight:600;text-decoration:none;">Open Another Job</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="lab-section" style="padding:40px 0 80px;">
+  <div class="lab-container">
+    <div class="pipe-result-card" style="margin-bottom:18px;">
+      <div class="pipe-result-card-title">Summary</div>
+      <div class="pipe-stat-grid">
+        <div class="pipe-stat"><div class="pipe-stat-label">Length</div><div class="pipe-stat-value">{{ map_data.length }} aa</div></div>
+        <div class="pipe-stat"><div class="pipe-stat-label">Domains</div><div class="pipe-stat-value">{{ map_data.stats.domains }}</div></div>
+        <div class="pipe-stat"><div class="pipe-stat-label">Motifs</div><div class="pipe-stat-value">{{ map_data.stats.motifs }}</div></div>
+        <div class="pipe-stat"><div class="pipe-stat-label">Sites</div><div class="pipe-stat-value">{{ map_data.stats.sites }}</div></div>
+        <div class="pipe-stat"><div class="pipe-stat-label">Topology Features</div><div class="pipe-stat-value">{{ map_data.stats.topology }}</div></div>
+      </div>
+    </div>
+
+    {% if map_data.links %}
+    <div class="pipe-result-card" style="margin-bottom:18px;">
+      <div class="pipe-result-card-title">External Links</div>
+      <div class="structmap-link-row">
+        {% for item in map_data.links.values() %}
+        <a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.label }} ↗</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="pipe-result-card" style="margin-bottom:18px;">
+      <div class="pipe-result-card-title">Architecture Map</div>
+      {% if map_data.tracks %}
+      {% for track in map_data.tracks %}
+      <div class="structmap-track">
+        <div>
+          <div style="font-size:0.86rem;font-weight:700;color:var(--text);">{{ track.label }}</div>
+          <div style="font-size:0.76rem;color:var(--text-light);margin-top:4px;">{{ track["items"] | length }} feature{{ '' if track["items"] | length == 1 else 's' }}</div>
+        </div>
+        <div>
+          <div class="structmap-rail">
+            {% for feature in track["items"] %}
+            <div
+              class="structmap-feature"
+              style="left:{{ feature.left }}%;width:max({{ feature.width }}%, 2.5%);background:{{ feature.color }};"
+              title="{{ feature.label }} ({{ feature.start }}-{{ feature.end }}){% if feature.source %} · {{ feature.source }}{% endif %}"
+            >
+              {{ feature.label }}
+            </div>
+            {% endfor %}
+          </div>
+          <div class="structmap-scale">
+            <span>1</span>
+            <span>{{ (map_data.length * 0.25) | round | int }}</span>
+            <span>{{ (map_data.length * 0.5) | round | int }}</span>
+            <span>{{ (map_data.length * 0.75) | round | int }}</span>
+            <span>{{ map_data.length }}</span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p style="color:var(--text-light);font-size:0.9rem;">No merged annotations were found in this ProtPipe job.</p>
+      {% endif %}
+    </div>
+
+    {% if map_data.features %}
+    <div class="pipe-result-card">
+      <div class="pipe-result-card-title">Feature List</div>
+      <table class="pipe-table">
+        <thead>
+          <tr><th>Feature</th><th>Type</th><th>Range</th><th>Source</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          {% for feature in map_data.features %}
+          <tr>
+            <td><strong>{{ feature.label }}</strong></td>
+            <td>{{ feature.feature_type }}</td>
+            <td>{{ feature.start }}-{{ feature.end }}</td>
+            <td>{{ feature.source or '—' }}</td>
+            <td>{{ feature.description or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -5,8 +5,8 @@
 
 <section class="page-hero">
   <div class="lab-container">
-    <h1>Contact &amp; Joining the Lab</h1>
-    <p>Get in touch or learn about opportunities to join the Singh Lab.</p>
+    <h1>{{ cms_page.title }}</h1>
+    <p>{{ cms_page.subtitle }}</p>
   </div>
 </section>
 
@@ -21,17 +21,17 @@
 
         <div class="contact-detail">
           <div class="contact-detail-icon">📍</div>
-          <p><strong>Address</strong>Department of Biology, Brooklyn College<br>2900 Bedford Ave, Brooklyn, NY 11210</p>
+          <p><strong>Address</strong>{{ cms_page.extra.address | replace('\n', '<br>') | safe }}</p>
         </div>
 
         <div class="contact-detail">
           <div class="contact-detail-icon">✉️</div>
-          <p><strong>Email</strong>[placeholder — lab contact email]</p>
+          <p><strong>Email</strong>{{ cms_page.extra.email }}</p>
         </div>
 
         <div class="contact-detail">
           <div class="contact-detail-icon">🏫</div>
-          <p><strong>Institution</strong>Brooklyn College, City University of New York (CUNY)</p>
+          <p><strong>Institution</strong>{{ cms_page.extra.institution }}</p>
         </div>
       </div>
 
@@ -41,17 +41,17 @@
 
         <div class="lab-card" style="margin-bottom:16px;">
           <h4 style="font-size:1rem;margin-bottom:8px;">Graduate Students</h4>
-          <p style="font-size:0.9rem;color:var(--text-secondary);">Prospective Ph.D. students should apply through the CUNY Graduate Center or Brooklyn College graduate programs in Biology or Computational Sciences. Mention your interest in the Singh Lab in your application. Feel free to email Prof. Singh with your CV and a brief statement of research interests.</p>
+          <p style="font-size:0.9rem;color:var(--text-secondary);">{{ cms_page.extra.graduate_text }}</p>
         </div>
 
         <div class="lab-card" style="margin-bottom:16px;">
           <h4 style="font-size:1rem;margin-bottom:8px;">Undergraduate Researchers</h4>
-          <p style="font-size:0.9rem;color:var(--text-secondary);">Brooklyn College undergraduate students interested in computational biology research are encouraged to contact Prof. Singh directly. Prior experience in programming (Python) or biology is helpful but not required — enthusiasm and commitment matter most.</p>
+          <p style="font-size:0.9rem;color:var(--text-secondary);">{{ cms_page.extra.undergrad_text }}</p>
         </div>
 
         <div class="lab-card">
           <h4 style="font-size:1rem;margin-bottom:8px;">Postdoctoral Researchers</h4>
-          <p style="font-size:0.9rem;color:var(--text-secondary);">Postdoctoral positions are filled as funding allows. If you are interested, send a CV, a brief research statement, and contact information for three references to Prof. Singh.</p>
+          <p style="font-size:0.9rem;color:var(--text-secondary);">{{ cms_page.extra.postdoc_text }}</p>
         </div>
       </div>
 

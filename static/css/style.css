@@ -597,6 +597,16 @@ body {
 	color: var(--error);
 }
 
+.status-badge.retired {
+	background: #f1f5f9;
+	color: var(--secondary);
+}
+
+.status-badge.warning {
+	background: #fff7ed;
+	color: #c2410c;
+}
+
 /* Info Sections */
 .info-section {
 	background: var(--surface);
@@ -918,9 +928,8 @@ input[type="color"] {
 }
 
 #original-view #mytable-original td {
-	border: 1px solid #000;
 	background-color: #ffffff;
-	padding: 4px 6px;
+	padding: 2px 4px;
 }
 
 /* Home link */

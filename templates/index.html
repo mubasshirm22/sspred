@@ -1,302 +1,307 @@
-<!DOCTYPE html>
-<html>
-<head>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.8/socket.io.min.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
-	<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/style.css')}}?v=2.0">
-	<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/tooltip.css')}}">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Secondary Structure Prediction</title>
-</head>
-<body>
-	<header class="header">
-		<div class="header-content">
-			<a href="/tools/sspred" class="logo">SSPred</a>
-			<nav class="nav-links">
-				<a href="/tools/sspred">Submit</a>
-				<a href="/tools/sspred/archive">Archive</a>
-				<a href="/">Singh Lab</a>
-			</nav>
-		</div>
-	</header>
+{% extends "lab/lab_base.html" %}
+{% block title %}SSPred{% endblock %}
 
-	<div class="main-container">
-		<aside class="sidebar">
-			<div class="sidebar-section">
-				<div class="sidebar-title">Navigation</div>
-				<a href="/tools/sspred" class="sidebar-link">Submit Sequence</a>
-				<a href="/tools/sspred/archive" class="sidebar-link">View Archive</a>
-			</div>
-			<div class="sidebar-section">
-				<div class="sidebar-title">Service Status</div>
-				<div class="status-box" style="border: none; padding: 0; box-shadow: none; margin: 0;">
-					<div class="status-item" style="padding: 8px 0;">
-						<strong style="font-size: 13px;">PSI:</strong> 
-						<span class="status-badge {% if serviceStatus.PSI == 'UP' %}up{% else %}down{% endif %}" style="font-size: 11px; padding: 2px 8px;">{{serviceStatus.PSI}}</span>
-					</div>
-					<div class="status-item" style="padding: 8px 0;">
-						<strong style="font-size: 13px;">JPred:</strong> 
-						<span class="status-badge {% if serviceStatus.JPred == 'UP' %}up{% else %}down{% endif %}" style="font-size: 11px; padding: 2px 8px;">{{serviceStatus.JPred}}</span>
-					</div>
-					<div class="status-item" style="padding: 8px 0;">
-						<strong style="font-size: 13px;">Sable:</strong> 
-						<span class="status-badge {% if serviceStatus.Sable == 'UP' %}up{% else %}down{% endif %}" style="font-size: 11px; padding: 2px 8px;">{{serviceStatus.Sable}}</span>
-					</div>
-					<div class="status-item" style="padding: 8px 0;">
-						<strong style="font-size: 13px;">SSPro:</strong> 
-						<span class="status-badge {% if serviceStatus.SSPro == 'UP' %}up{% else %}down{% endif %}" style="font-size: 11px; padding: 2px 8px;">{{serviceStatus.SSPro}}</span>
-					</div>
-					<div class="status-item" style="padding: 8px 0;">
-						<strong style="font-size: 13px;">Yaspin:</strong> 
-						<span class="status-badge {% if serviceStatus.Yaspin == 'UP' %}up{% else %}down{% endif %}" style="font-size: 11px; padding: 2px 8px;">{{serviceStatus.Yaspin}}</span>
-					</div>
-					<div class="status-item" style="padding: 8px 0;">
-						<strong style="font-size: 13px;">PHDpsi:</strong> 
-						<span class="status-badge {% if serviceStatus.PHDpsi == 'UP' %}up{% else %}down{% endif %}" style="font-size: 11px; padding: 2px 8px;">{{serviceStatus.PHDpsi}}</span>
-					</div>
-					<div class="status-item" style="padding: 8px 0;">
-						<strong style="font-size: 13px;">PROFsec:</strong> 
-						<span class="status-badge {% if serviceStatus.PROFsec == 'UP' %}up{% else %}down{% endif %}" style="font-size: 11px; padding: 2px 8px;">{{serviceStatus.PROFsec}}</span>
-					</div>
-					<div class="status-item" style="padding: 8px 0;">
-						<strong style="font-size: 13px;">Predator:</strong> 
-						<span class="status-badge {% if serviceStatus.Predator == 'UP' %}up{% else %}down{% endif %}" style="font-size: 11px; padding: 2px 8px;">{{serviceStatus.Predator}}</span>
-					</div>
-					<div class="status-item" style="padding: 8px 0;">
-						<strong style="font-size: 13px;">NetSurf:</strong>
-						<span class="status-badge {% if serviceStatus.NetSurf == 'UP' %}up{% else %}down{% endif %}" style="font-size: 11px; padding: 2px 8px;">{{serviceStatus.NetSurf}}</span>
-					</div>
-					<div class="status-item" style="padding: 8px 0; border-bottom: none;">
-						<strong style="font-size: 13px;">Known PDB (STRIDE):</strong>
-						<span class="status-badge {% if serviceStatus.STRIDE == 'UP' %}up{% else %}down{% endif %}" style="font-size: 11px; padding: 2px 8px;">{{serviceStatus.STRIDE}}</span>
-					</div>
-				</div>
-			</div>
-			<div class="sidebar-section">
-				<div class="sidebar-title">Active Jobs</div>
-				<div style="font-size: 13px; color: var(--text-secondary);">
-					<div style="padding: 6px 0;">PSI: <strong style="color: var(--primary);">{{counter.PSI}}</strong></div>
-					<div style="padding: 6px 0;">JPred: <strong style="color: var(--primary);">{{counter.JPred}}</strong></div>
-					<div style="padding: 6px 0;">Sable: <strong style="color: var(--primary);">{{counter.Sable}}</strong></div>
-					<div style="padding: 6px 0;">SSPro: <strong style="color: var(--primary);">{{counter.SSPro}}</strong> <span style="color: var(--text-light);">(MAX 5)</span></div>
-					<div style="padding: 6px 0;">Yaspin: <strong style="color: var(--primary);">{{counter.Yaspin}}</strong> <span style="color: var(--text-light);">(MAX 3)</span></div>
-					<div style="padding: 6px 0;">PHDpsi: <strong style="color: var(--primary);">{{counter.PHDpsi}}</strong> <span style="color: var(--text-light);">(MAX 5)</span></div>
-					<div style="padding: 6px 0;">PROFsec: <strong style="color: var(--primary);">{{counter.PROFsec}}</strong> <span style="color: var(--text-light);">(MAX 5)</span></div>
-					<div style="padding: 6px 0;">Predator: <strong style="color: var(--primary);">{{counter.Predator}}</strong> <span style="color: var(--text-light);">(MAX 5)</span></div>
-					<div style="padding: 6px 0;">NetSurf: <strong style="color: var(--primary);">{{counter.NetSurf}}</strong> <span style="color: var(--text-light);">(MAX 5)</span></div>
-				</div>
-			</div>
-		</aside>
+{% block extra_head %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}?v=2.1">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/tooltip.css') }}">
+{% endblock %}
 
-		<main class="main-content">
-			<h1 class="page-title">Secondary Structure Prediction</h1>
-			<p class="page-subtitle">Predict protein secondary structure using multiple advanced algorithms</p>
+{% block content %}
+<section class="page-hero">
+  <div class="lab-container">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="background:rgba(255,255,255,.15);color:#fff;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:4px 12px;border-radius:999px;">Live Tool</span>
+        </div>
+        <h1>SSPred</h1>
+        <p>Consensus secondary structure prediction across multiple remote predictors, with majority voting, optional PDB structure comparison, and live job tracking.</p>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-self:flex-start;">
+        <a href="/tools/sspred/archive" style="padding:9px 18px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:7px;color:#fff;font-size:0.85rem;font-weight:600;text-decoration:none;">Archive</a>
+        <a href="/tools" style="padding:9px 18px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:7px;color:#fff;font-size:0.85rem;font-weight:600;text-decoration:none;">All Tools</a>
+      </div>
+    </div>
+  </div>
+</section>
 
-			{% block content %}
-			<form method="POST" action=""> 
-				{{ form.hidden_tag() }}
-				{% if form.errors %}
-					<ul class="errors">
-						{% for field_name, field_errors in form.errors|dictsort if field_errors %}
-							{% for error in field_errors %}
-								<li>{{ error }}</li>
-							{% endfor %}
-						{% endfor %}
-					</ul>
-				{% endif %}
+<section class="lab-section" style="padding:40px 0 80px;">
+  <div class="lab-container">
+    <div class="main-container" style="padding:0;">
+      <aside class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-title">Navigation</div>
+          <a href="/tools/sspred" class="sidebar-link">Submit Sequence</a>
+          <a href="/tools/sspred/archive" class="sidebar-link">View Archive</a>
+        </div>
 
-				<div class="form-section">
-					<div class="form-section-title">Protein Sequence</div>
-					<div class="form-group">
-						<label>
-							Enter Sequence
-							<span class="tooltip">
-								<ul class="tooltiptext">
-									Enter a protein sequence for prediction.
-									<li>Only a single sequence is accepted.</li>
-									<li>Sequence must be between 40 and 4000 characters.</li>
-									<li>Only the following characters are allowed: A,R,N,D,C,E,Q,G,H,I,L,K,M,F,P,S,T,W,Y,V</li>
-									<li>Spaces will automatically be removed.</li>
-								</ul>
-							</span>
-						</label>
-						{{ form.seqtext(cols="50", rows="6") }}
-						<div class="button-group">
-							<button id="clearbtn" type="button" class="btn btn-secondary">Clear</button>
-							<button id="genbtn" type="button" class="btn btn-secondary">Random Sequence</button>
-						</div>
-					</div>
-				</div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">Service Status</div>
+          <div class="status-box" style="border:none;padding:0;box-shadow:none;margin:0;">
+            {% for name in ['PSI', 'JPred', 'Sable', 'SSPro', 'Yaspin', 'Predator', 'NetSurf', 'STRIDE'] %}
+            <div class="status-item" style="padding:8px 0;{% if loop.last %}border-bottom:none;{% endif %}">
+              <strong style="font-size:13px;">{% if name == 'STRIDE' %}Known PDB (STRIDE){% else %}{{ name }}{% endif %}:</strong>
+              {% set value = serviceStatus[name] %}
+              <span class="status-badge {% if value == 'UP' %}up{% elif value == 'RETIRED' %}retired{% else %}down{% endif %}" style="font-size:11px;padding:2px 8px;">{{ value }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          <div style="margin-top:10px;font-size:12px;color:var(--text-light);">
+            PHDpsi and PROFsec are retired upstream and no longer submitted by SSPred.
+          </div>
+        </div>
 
-				<div class="form-section">
-					<div class="form-section-title">Prediction Services</div>
-					<div class="form-group">
-						<label>Select which services to use:</label>
-						<div class="services-grid" onclick="checkCount()">
-							<div class="service-option sitetooltip">
-								{{ form.JPred }}
-								{{ form.JPred.label }}
-								<div class="tooltiptext">Maximum Sequence Length: 800</div>
-							</div>
-							<div class="service-option sitetooltip">
-								{{ form.PSI }}
-								{{ form.PSI.label }}
-								<div class="tooltiptext">Maximum Sequence Length: 1500</div>
-							</div>
-							<div class="service-option sitetooltip">
-								{{ form.Sable }}
-								{{ form.Sable.label }}
-								<div class="tooltiptext">Maximum Sequence Length: 4000</div>
-							</div>
-							<div class="service-option sitetooltip">
-								{{ form.SSPro }}
-								{{ form.SSPro.label }}
-								<div class="tooltiptext">Maximum Sequence Length: 400</div>
-							</div>
-							<div class="service-option sitetooltip">
-								{{ form.Yaspin }}
-								{{ form.Yaspin.label }}
-								<div class="tooltiptext">Maximum Sequence Length: 4000</div>
-							</div>
-							<div class="service-option sitetooltip" style="opacity:0.45;cursor:not-allowed;">
-								<input type="checkbox" disabled>
-								<span style="text-decoration:line-through;">PHDpsi</span>
-								<div class="tooltiptext">Temporarily unavailable — PHDpsi was removed from EBI Job Dispatcher.</div>
-							</div>
-							<div class="service-option sitetooltip" style="opacity:0.45;cursor:not-allowed;">
-								<input type="checkbox" disabled>
-								<span style="text-decoration:line-through;">PROFsec</span>
-								<div class="tooltiptext">Temporarily unavailable — PROFsec was removed from EBI Job Dispatcher.</div>
-							</div>
-							<div class="service-option sitetooltip">
-								{{ form.Predator }}
-								{{ form.Predator.label }}
-								<div class="tooltiptext">Maximum Sequence Length: 4000</div>
-							</div>
-							<div class="service-option sitetooltip">
-								{{ form.NetSurf }}
-								{{ form.NetSurf.label }}
-								<div class="tooltiptext">NetSurfP-2.0 via DTU Health Tech — per-residue secondary structure (H/E/C). Slow: ~25 min.</div>
-							</div>
-						</div>
-					</div>
-				</div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">Active Jobs</div>
+          <div style="font-size:13px;color:var(--text-secondary);">
+            <div style="padding:6px 0;">PSI: <strong style="color:var(--primary);">{{ counter.PSI }}</strong></div>
+            <div style="padding:6px 0;">JPred: <strong style="color:var(--primary);">{{ counter.JPred }}</strong></div>
+            <div style="padding:6px 0;">Sable: <strong style="color:var(--primary);">{{ counter.Sable }}</strong></div>
+            <div style="padding:6px 0;">SSPro: <strong style="color:var(--primary);">{{ counter.SSPro }}</strong> <span style="color:var(--text-light);">(MAX 5)</span></div>
+            <div style="padding:6px 0;">Yaspin: <strong style="color:var(--primary);">{{ counter.Yaspin }}</strong> <span style="color:var(--text-light);">(MAX 3)</span></div>
+            <div style="padding:6px 0;">Predator: <strong style="color:var(--primary);">{{ counter.Predator }}</strong> <span style="color:var(--text-light);">(MAX 5)</span></div>
+            <div style="padding:6px 0;">NetSurf: <strong style="color:var(--primary);">{{ counter.NetSurf }}</strong> <span style="color:var(--text-light);">(MAX 5)</span></div>
+          </div>
+        </div>
+      </aside>
 
-				<div class="form-section known-structure-section">
-					<div class="form-section-title">Known Structure (Optional)</div>
-					<div class="form-group">
-						<label>
-							<input type="checkbox" id="knownSeq" onclick="knownToggle()" style="width: auto; margin-right: 8px;">
-							Use PDB Structure
-							<span class="tooltip">
-								<ul class="tooltiptext">
-									If the entered structure id and chain id are from a valid known structure, 
-									then the known elements will be displayed in the output.
-									<li>Both the structure id and chain id must be entered.</li>
-									<li>Chain id's are case sensitive.</li>
-								</ul>
-							</span>
-						</label>
-						<div style="display: flex; gap: 16px; margin-top: 12px;">
-							<div class="form-group" style="margin: 0;">
-								{{ form.structureId.label }}
-								{{ form.structureId }}
-							</div>
-							<div class="form-group" style="margin: 0;">
-								{{ form.chainId.label }}
-								{{ form.chainId }}
-							</div>
-						</div>
-					</div>
-				</div>
+      <main class="main-content">
+        <h1 class="page-title">Secondary Structure Prediction</h1>
+        <p class="page-subtitle">Submit a protein sequence once and compare predictions across multiple external services.</p>
 
-				<div class="form-section">
-					<div class="form-section-title">Email Notification (Optional)</div>
-					<div class="form-group">
-						{{ form.email.label }}
-						{{ form.email(placeholder="you@example.com", autocomplete="email") }}
-						<small style="color:var(--text-secondary);font-size:12px;">If provided, you'll receive an email when your job completes.</small>
-					</div>
-				</div>
+        <form method="POST" action="">
+          {{ form.hidden_tag() }}
+          {% if form.errors %}
+          <ul class="errors">
+            {% for field_name, field_errors in form.errors|dictsort if field_errors %}
+              {% for error in field_errors %}
+              <li>{{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+          </ul>
+          {% endif %}
 
-				<div class="button-group">
-					<input type="reset" class="btn btn-secondary" value="Reset">
-					{{ form.submitbtn(class="btn btn-primary") }}
-				</div>
-			</form>
-			{% endblock %}
+          <div class="form-section">
+            <div class="form-section-title">Protein Sequence</div>
+            <div class="form-group">
+              <label>
+                Enter Sequence
+                <span class="tooltip">
+                  <ul class="tooltiptext">
+                    Enter a protein sequence for prediction.
+                    <li>Only a single sequence is accepted.</li>
+                    <li>Sequence must be between 40 and 4000 characters.</li>
+                    <li>Only the following characters are allowed: A,R,N,D,C,E,Q,G,H,I,L,K,M,F,P,S,T,W,Y,V</li>
+                    <li>Spaces will automatically be removed.</li>
+                  </ul>
+                </span>
+              </label>
+              {{ form.seqtext(cols="50", rows="6") }}
+              <div class="button-group">
+                <button id="clearbtn" type="button" class="btn btn-secondary">Clear</button>
+                <button id="genbtn" type="button" class="btn btn-secondary">Random Sequence</button>
+              </div>
+            </div>
+          </div>
 
-			<div class="info-section">
-				<h3>How It Works</h3>
-				<p style="margin-bottom: 16px;">Upon submission, you will be redirected to a results page with real-time progress bars showing the status of each prediction service. The page automatically updates every few seconds to display results as they complete.</p>
-				
-				<h3 style="margin-top: 24px;">Typical Wait Times (Sequence of 150 Residues)</h3>
-				<ul>
-					<li><strong>PSI:</strong> 1-7 minutes</li>
-					<li><strong>JPred:</strong> 3-5 minutes</li>
-					<li><strong>Sable:</strong> 5-7 minutes</li>
-					<li><strong>SSPro:</strong> 8 minutes</li>
-				</ul>
-			</div>
+          <div class="form-section">
+            <div class="form-section-title">Prediction Services</div>
+            <div class="form-group">
+              <label>Select which services to use:</label>
+              <div class="services-grid">
+                <div class="service-option sitetooltip">
+                  {{ form.JPred }}
+                  {{ form.JPred.label }}
+                  <div class="tooltiptext">Maximum Sequence Length: 800</div>
+                </div>
+                <div class="service-option sitetooltip">
+                  {{ form.PSI }}
+                  {{ form.PSI.label }}
+                  <div class="tooltiptext">Maximum Sequence Length: 1500</div>
+                </div>
+                <div class="service-option sitetooltip">
+                  {{ form.Sable }}
+                  {{ form.Sable.label }}
+                  <div class="tooltiptext">Maximum Sequence Length: 4000</div>
+                </div>
+                <div class="service-option sitetooltip">
+                  {{ form.SSPro }}
+                  {{ form.SSPro.label }}
+                  <div class="tooltiptext">Maximum Sequence Length: 400</div>
+                </div>
+                <div class="service-option sitetooltip">
+                  {{ form.Yaspin }}
+                  {{ form.Yaspin.label }}
+                  <div class="tooltiptext">Maximum Sequence Length: 4000</div>
+                </div>
+                <div class="service-option sitetooltip">
+                  {{ form.Predator }}
+                  {{ form.Predator.label }}
+                  <div class="tooltiptext">Maximum Sequence Length: 4000</div>
+                </div>
+                <div class="service-option sitetooltip">
+                  {{ form.NetSurf }}
+                  {{ form.NetSurf.label }}
+                  <div class="tooltiptext">NetSurfP-2.0 via DTU Health Tech — per-residue secondary structure (H/E/C). Slow: ~25 min.</div>
+                </div>
+                <div class="service-option sitetooltip" style="opacity:0.55;cursor:not-allowed;">
+                  <input type="checkbox" disabled>
+                  <span style="text-decoration:line-through;">PHDpsi</span>
+                  <div class="tooltiptext">Retired upstream from EBI Job Dispatcher.</div>
+                </div>
+                <div class="service-option sitetooltip" style="opacity:0.55;cursor:not-allowed;">
+                  <input type="checkbox" disabled>
+                  <span style="text-decoration:line-through;">PROFsec</span>
+                  <div class="tooltiptext">Retired upstream from EBI Job Dispatcher.</div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-			<div class="info-section">
-				<h3>Prediction Services</h3>
-				<ul>
-					<li><strong>PSI:</strong> <a href="http://bioinf.cs.ucl.ac.uk/psipred/" target="_blank">PSIPRED</a></li>
-					<li><strong>JPred:</strong> <a href="http://www.compbio.dundee.ac.uk/jpred/" target="_blank">JPred4</a></li>
-					<li><strong>Sable:</strong> <a href="https://sable.cchmc.org/" target="_blank">SABLE</a></li>
-					<li><strong>SSPro:</strong> <a href="http://scratch.proteomics.ics.uci.edu/index.html" target="_blank">SSPro</a></li>
-					<li><strong>RCSB:</strong> <a href="https://www.rcsb.org/" target="_blank">Protein Data Bank</a></li>
-				</ul>
-			</div>
-		</main>
-	</div>
+          <div class="form-section known-structure-section">
+            <div class="form-section-title">Known Structure (Optional)</div>
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="knownSeq" style="width:auto;margin-right:8px;">
+                Use PDB Structure
+                <span class="tooltip">
+                  <ul class="tooltiptext">
+                    If the entered structure ID and chain ID are from a valid known structure,
+                    the known elements will be displayed in the output.
+                    <li>Both the structure ID and chain ID must be entered.</li>
+                    <li>Chain IDs are case sensitive.</li>
+                  </ul>
+                </span>
+              </label>
+              <div style="display:flex;gap:16px;margin-top:12px;">
+                <div class="form-group" style="margin:0;">
+                  {{ form.structureId.label }}
+                  {{ form.structureId }}
+                </div>
+                <div class="form-group" style="margin:0;">
+                  {{ form.chainId.label }}
+                  {{ form.chainId }}
+                </div>
+              </div>
+            </div>
+          </div>
 
-	<script type="text/javascript">
-		$('#clearbtn').on('click', function() {
-			$('#seqtext').val("");
-		});
+          <div class="form-section">
+            <div class="form-section-title">Email Notification (Optional)</div>
+            <div class="form-group">
+              {{ form.email.label }}
+              {{ form.email(placeholder="you@example.com", autocomplete="email") }}
+              <small style="color:var(--text-secondary);font-size:12px;">If provided, SSPred will send a completion email when all selected services finish.</small>
+            </div>
+          </div>
 
-		$('#genbtn').on('click', function() {
-			$('#seqtext').val(randSeq());
-		});
+          <div class="button-group">
+            <input type="reset" class="btn btn-secondary" value="Reset">
+            {{ form.submitbtn(class="btn btn-primary") }}
+          </div>
+        </form>
 
-		function randSeq() {
-			var result = '';
-			var characters = 'ACDEFGHIKLMNPQRSTVWY';
-			var charactersLength = characters.length;
-			var length = Math.floor(Math.random() * 140) + 60;
-			for (var i = 0; i < length; i++) {
-				result += characters.charAt(Math.floor(Math.random() * charactersLength));
-			}
-			return result;
-		}
+        <div class="info-section">
+          <h3>How It Works</h3>
+          <p style="margin-bottom:16px;">SSPred submits your sequence to the selected remote predictors in parallel, stores each response as it arrives, and recomputes the majority-vote line during the run.</p>
+          <h3 style="margin-top:24px;">Typical Wait Times (150 aa sequence)</h3>
+          <ul>
+            <li><strong>PSI:</strong> 1-7 minutes</li>
+            <li><strong>JPred:</strong> 3-5 minutes</li>
+            <li><strong>Sable:</strong> 5-7 minutes</li>
+            <li><strong>SSPro:</strong> ~8 minutes</li>
+            <li><strong>NetSurf:</strong> often 20-25 minutes</li>
+          </ul>
+        </div>
 
-		function checkCount() {
-			checks = $('input[type="checkbox"]:checked').length;
-			submit = document.getElementById('submitbtn');
-			if(checks <= 0)
-				submit.disabled = true;
-			else
-				submit.disabled = false;
-		}
+        <div class="info-section">
+          <h3>Prediction Services</h3>
+          <ul>
+            <li><strong>PSI:</strong> <a href="http://bioinf.cs.ucl.ac.uk/psipred/" target="_blank" rel="noopener">PSIPRED</a></li>
+            <li><strong>JPred:</strong> <a href="http://www.compbio.dundee.ac.uk/jpred/" target="_blank" rel="noopener">JPred4</a></li>
+            <li><strong>Sable:</strong> <a href="https://sable.cchmc.org/" target="_blank" rel="noopener">SABLE</a></li>
+            <li><strong>SSPro:</strong> <a href="http://scratch.proteomics.ics.uci.edu/index.html" target="_blank" rel="noopener">SSPro</a></li>
+            <li><strong>NetSurf:</strong> <a href="https://services.healthtech.dtu.dk/service.php?NetSurfP-2.0" target="_blank" rel="noopener">NetSurfP-2.0</a></li>
+            <li><strong>RCSB:</strong> <a href="https://www.rcsb.org/" target="_blank" rel="noopener">Protein Data Bank</a></li>
+          </ul>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+{% endblock %}
 
-		function knownToggle() {
-			toggle = document.getElementById('knownSeq');
-			structId = document.getElementById('structureId');
-			chainId = document.getElementById('chainId');
-			if(toggle.checked) {
-				structId.disabled = false;
-				chainId.disabled = false;
-			} else {
-				structId.disabled = true;
-				chainId.disabled = true;
-				structId.value = "";
-				chainId.value = "";
-			}
-		}
+{% block extra_scripts %}
+<script>
+function randSeq() {
+  var result = '';
+  var characters = 'ACDEFGHIKLMNPQRSTVWY';
+  var length = Math.floor(Math.random() * 140) + 60;
+  for (var i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+}
 
-		knownToggle();
-	</script>
-</body>
-</html>
+function checkCount() {
+  var checks = document.querySelectorAll('.services-grid input[type="checkbox"]:checked').length;
+  var submit = document.getElementById('submitbtn');
+  if (submit) {
+    submit.disabled = checks <= 0;
+  }
+}
+
+function knownToggle() {
+  var toggle = document.getElementById('knownSeq');
+  var structId = document.getElementById('structureId');
+  var chainId = document.getElementById('chainId');
+  if (!toggle || !structId || !chainId) {
+    return;
+  }
+  if (toggle.checked) {
+    structId.disabled = false;
+    chainId.disabled = false;
+  } else {
+    structId.disabled = true;
+    chainId.disabled = true;
+    structId.value = '';
+    chainId.value = '';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var clearBtn = document.getElementById('clearbtn');
+  var genBtn = document.getElementById('genbtn');
+  var seqField = document.getElementById('seqtext');
+  var knownSeq = document.getElementById('knownSeq');
+  var structureId = document.getElementById('structureId');
+  var chainId = document.getElementById('chainId');
+
+  if (clearBtn && seqField) {
+    clearBtn.addEventListener('click', function() {
+      seqField.value = '';
+    });
+  }
+
+  if (genBtn && seqField) {
+    genBtn.addEventListener('click', function() {
+      seqField.value = randSeq();
+    });
+  }
+
+  document.querySelectorAll('.services-grid input[type="checkbox"]').forEach(function(el) {
+    el.addEventListener('change', checkCount);
+  });
+
+  if (knownSeq) {
+    knownSeq.addEventListener('change', knownToggle);
+    if ((structureId && structureId.value) || (chainId && chainId.value)) {
+      knownSeq.checked = true;
+    }
+  }
+
+  knownToggle();
+  checkCount();
+});
+</script>
+{% endblock %}

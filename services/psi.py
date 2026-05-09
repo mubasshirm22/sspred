@@ -116,16 +116,17 @@ def get(seq):
 		print("PSI horiz URL:", horiz_url)
 		print("PSI horiz status:", horiz.status_code)
 		print("PSI horiz content:", repr(horiz.text[:400]))
-		raw = horiz.text.splitlines()
-		for line in raw:
-			line = line.strip()
-			if line.startswith("Conf"):
-				SS.conf += line[6:]
-			if line.startswith("Pred"):
-				SS.pred += line[6:]
-
-		SS.status = 1
-		print("PsiPred Complete")
+		parsed = _parse_horiz_output(horiz.text)
+		if parsed is None:
+			SS.pred += "Could not parse PSIPRED .horiz output"
+			SS.conf += "Could not parse PSIPRED .horiz output"
+			SS.status = 2
+			print("PsiPred failed: horiz parse error")
+		else:
+			SS.pred = parsed["pred"]
+			SS.conf = parsed["conf"]
+			SS.status = 1
+			print("PsiPred Complete")
 
 	except requests.RequestException as e:
 		SS.pred += "Network error: " + str(e)
@@ -145,3 +146,17 @@ def get(seq):
 	print(SS.conf)
 
 	return SS
+
+
+def _parse_horiz_output(text):
+	pred = ""
+	conf = ""
+	for raw_line in text.splitlines():
+		line = raw_line.strip()
+		if line.startswith("Conf"):
+			conf += line[6:].strip()
+		elif line.startswith("Pred"):
+			pred += line[6:].strip()
+	if pred and conf:
+		return {"pred": pred, "conf": conf}
+	return None

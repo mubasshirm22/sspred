@@ -50,42 +50,56 @@ def get(seq):
 	email_id, message = batchtools.emailRequestWait(session, query, "Query:", randName, "Sable Not Ready", 30, 2700)
 	
 	if email_id:
-		#message = emailtools.decodeEmail(email_service, email_id)
-		#print(message)
-		message_parts = message.splitlines()
-
-		#getting the prediction sequence and confidence
-		index = 0
-		while message_parts[index][:11] != 'END_SECTION':
-			if message_parts[index].startswith('>'):
-				SS.pred += message_parts[index + 2].strip()
-				SS.conf += message_parts[index + 3].strip()
-				index + 4 #add 4 then 1 later to get to next set of prediction
-			index += 1
-
-		#getting the probabilities for helix, beta strand, coil
-		index += 1 #go past the prediction's 'END_SECTION'
-		helixProb = ''
-		betaProb = ''
-		coilProb = ''
-		while message_parts[index][:11] != 'END_SECTION':
-			if message_parts[index].startswith('>'):
-				helixProb += message_parts[index + 2][3:].strip() + ' '
-				betaProb += message_parts[index + 3][3:].strip() + ' '
-				coilProb += message_parts[index + 4][3:].strip() + ' '
-			index += 1
-			
-		SS.hconf = helixProb.split()
-		SS.econf = betaProb.split()
-		SS.cconf = coilProb.split()
-		
-		SS.status = 1
-		print(SS.pred)
-		print(SS.conf)
-		print("Sable Complete")
+		parsed = _parse_email_message(message)
+		if parsed is None:
+			SS.pred += "Could not parse SABLE email output"
+			SS.conf += "Could not parse SABLE email output"
+			SS.status = 2
+			print("SABLE failed: parse error")
+		else:
+			SS.pred = parsed["pred"]
+			SS.conf = parsed["conf"]
+			SS.hconf = parsed["hconf"]
+			SS.econf = parsed["econf"]
+			SS.cconf = parsed["cconf"]
+			SS.status = 1
+			print(SS.pred)
+			print(SS.conf)
+			print("Sable Complete")
 	else:
 		SS.pred += "failed to respond after 45 minutes"
 		SS.conf += "failed to respond after 45 minutes"
 		SS.status = 2 #error status
 		print("Sable failed: No response after 45 minutes")
 	return SS
+
+
+def _parse_email_message(message):
+	message_parts = message.splitlines()
+	pred = ""
+	conf = ""
+	index = 0
+	while index < len(message_parts) and message_parts[index][:11] != 'END_SECTION':
+		if message_parts[index].startswith('>') and index + 3 < len(message_parts):
+			pred += message_parts[index + 2].strip()
+			conf += message_parts[index + 3].strip()
+		index += 1
+	if not pred or not conf:
+		return None
+	index += 1
+	helix_prob = ''
+	beta_prob = ''
+	coil_prob = ''
+	while index < len(message_parts) and message_parts[index][:11] != 'END_SECTION':
+		if message_parts[index].startswith('>') and index + 4 < len(message_parts):
+			helix_prob += message_parts[index + 2][3:].strip() + ' '
+			beta_prob += message_parts[index + 3][3:].strip() + ' '
+			coil_prob += message_parts[index + 4][3:].strip() + ' '
+		index += 1
+	return {
+		"pred": pred,
+		"conf": conf,
+		"hconf": helix_prob.split(),
+		"econf": beta_prob.split(),
+		"cconf": coil_prob.split(),
+	}

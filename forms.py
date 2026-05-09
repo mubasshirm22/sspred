@@ -9,7 +9,7 @@ class SubmissionForm(FlaskForm):
 	# Sequence is now optional if a valid structureId+chainId is provided.
 	seqtext = TextAreaField('Sequence', [
 		validators.Optional(),
-		validators.Length(min=30,max=4000, message="Sequence must be between 40 and 4000 characters"),
+		validators.Length(min=40,max=4000, message="Sequence must be between 40 and 4000 characters"),
 		validators.Regexp(regex='^[ARNDCEQGHILKMFPSTWYV\s]*$', flags = re.IGNORECASE, message="Invalid Characters")],
 		widget=TextArea(), default= "")
 	email = StringField('Email (Optional):', [validators.Email(), validators.Optional()])
@@ -45,9 +45,18 @@ class SubmissionForm(FlaskForm):
 			return False
 		
 		validated = True
+		active_services = (
+			self.JPred.data,
+			self.PSI.data,
+			self.Sable.data,
+			self.Yaspin.data,
+			self.SSPro.data,
+			self.Predator.data,
+			self.NetSurf.data,
+		)
 		
 		#Check if at least one site selected
-		if not self.JPred.data and not self.PSI.data and not self.PSS.data and not self.RaptorX.data and not self.Sable.data and not self.Yaspin.data and not self.SSPro.data and not self.PHDpsi.data and not self.PROFsec.data and not self.Predator.data and not self.NetSurf.data:
+		if not any(active_services):
 			self.JPred.errors.append('At least one site must be selected.')
 			validated = False
 

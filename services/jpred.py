@@ -67,17 +67,17 @@ def get(seq):
 					page = '<'  # Keep trying if request fails
 
 		if page[0] != '<' and time.time() < stime + timeout:
-			raw = page.splitlines()
-
-			SS.pred = raw[1].replace('jnetpred:','')
-			SS.pred = SS.pred.replace('-','C')			#Replaces dashes with C
-			SS.pred = SS.pred.replace(',','')
-
-			SS.conf = raw[2].replace('JNETCONF:','')
-			SS.conf = SS.conf.replace(',','')
-
-			SS.status = 1
-			print("JPred Complete")
+			parsed = _parse_jnet_output(page)
+			if parsed is None:
+				SS.pred += "Could not parse JPred .jnet output"
+				SS.conf += "Could not parse JPred .jnet output"
+				SS.status = 2
+				print("JPred failed: parse error")
+			else:
+				SS.pred = parsed["pred"]
+				SS.conf = parsed["conf"]
+				SS.status = 1
+				print("JPred Complete")
 		else:
 			elapsed_min = int((time.time() - stime) / 60)
 			SS.pred += "failed to respond after " + str(elapsed_min) + " minutes"
@@ -95,3 +95,18 @@ def get(seq):
 	print(SS.conf)
 	
 	return SS
+
+
+def _parse_jnet_output(text):
+	raw = text.splitlines()
+	pred = ""
+	conf = ""
+	for line in raw:
+		line = line.strip()
+		if line.startswith('jnetpred:'):
+			pred += line.replace('jnetpred:', '').replace('-', 'C').replace(',', '').strip()
+		elif line.startswith('JNETCONF:'):
+			conf += line.replace('JNETCONF:', '').replace(',', '').strip()
+	if pred and conf:
+		return {"pred": pred, "conf": conf}
+	return None

@@ -5,8 +5,8 @@
 
 <section class="page-hero">
   <div class="lab-container">
-    <h1>Team</h1>
-    <p>Faculty, graduate students, postdocs, and undergraduates in the Singh Lab.</p>
+    <h1>{{ cms_page.title }}</h1>
+    <p>{{ cms_page.subtitle }}</p>
   </div>
 </section>
 
@@ -14,23 +14,21 @@
 <section class="lab-section lab-section--alt">
   <div class="lab-container">
     <p class="section-label">Principal Investigator</p>
-    <h2 class="section-title" style="margin-bottom:40px;">Prof. Shaneen Singh</h2>
+    <h2 class="section-title" style="margin-bottom:40px;">Prof. {{ cms_page.extra.pi_name }}</h2>
     <div class="pi-section">
       <div class="pi-photo">SS</div>
       <div>
-        <div class="pi-name">Shaneen Singh</div>
-        <div class="pi-title">Professor of Biology · Brooklyn College, CUNY</div>
+        <div class="pi-name">{{ cms_page.extra.pi_name }}</div>
+        <div class="pi-title">{{ cms_page.extra.pi_title }}</div>
         <p class="pi-bio">
-          Shaneen Singh is a professor of biology. Her doctoral thesis was titled "Biochemical Studies in Growing Bamboo, <em>Dendrocalamus strictus</em>." Although trained as an experimental biologist, she has transitioned into the field of computational biology. The long-term research goal of her lab is to apply computer modeling to address important biological questions. She teaches courses in bioinformatics and mentors students both at the undergraduate and graduate level.
+          {{ cms_page.extra.pi_bio }}
         </p>
         <div class="pi-edu">
           <h4>Education &amp; Training</h4>
           <ul>
-            <li>B.S., Punjabi University (Patiala, India) — Life Sciences, 1991</li>
-            <li>M.S., Punjabi University (Patiala, India) — Biotechnology, 1993</li>
-            <li>Ph.D., Thapar Institute of Engineering and Technology (Patiala, India) — Biotechnology, 1998</li>
-            <li>Postdoctoral Research Associate, University of Medicine and Dentistry — Biochemistry &amp; Molecular Biology, 2001</li>
-            <li>Postdoctoral Research Associate, Weill Medical College — Computational Biology, 2004</li>
+            {% for item in cms_page.extra.pi_education %}
+            <li>{{ item }}</li>
+            {% endfor %}
           </ul>
         </div>
       </div>
@@ -44,33 +42,24 @@
     <p class="section-label">Lab Members</p>
     <h2 class="section-title" style="margin-bottom:32px;">Graduate Students &amp; Researchers</h2>
     <div class="grid-3">
-
+      {% for member in cms_team_members %}
       <div class="member-card">
-        <div class="member-avatar">GS</div>
-        <h3>[Graduate Student Name]</h3>
-        <div class="member-role">Ph.D. Student, Computational Biology</div>
-        <p>Research: [Placeholder — e.g., deep learning methods for protein structure prediction and domain annotation]. B.S. in Computer Science, [University], 202X.</p>
+        {% if member.image_path %}
+        <img src="{{ member.image_path }}" alt="{{ member.name }}" style="width:72px;height:72px;border-radius:999px;object-fit:cover;display:block;margin:0 auto 16px;box-shadow:0 8px 18px rgba(15,23,42,.08);">
+        {% else %}
+        <div class="member-avatar">{{ member.initials or member.name[:2] }}</div>
+        {% endif %}
+        <h3>{{ member.name }}</h3>
+        <div class="member-role">{{ member.role }}</div>
+        <p>{{ member.bio }}</p>
       </div>
-
-      <div class="member-card">
-        <div class="member-avatar">PD</div>
-        <h3>[Postdoctoral Researcher]</h3>
-        <div class="member-role">Postdoctoral Associate</div>
-        <p>Research: [Placeholder — e.g., coevolutionary analysis and protein-protein interaction networks]. Ph.D. in Biophysics, [University], 202X.</p>
-      </div>
-
-      <div class="member-card">
-        <div class="member-avatar">UR</div>
-        <h3>[Undergraduate Researcher]</h3>
-        <div class="member-role">Undergraduate Research Assistant</div>
-        <p>Junior, Bioinformatics major. Working on [placeholder — e.g., benchmarking secondary structure prediction methods and building analysis pipelines].</p>
-      </div>
+      {% endfor %}
 
     </div>
 
     <div style="margin-top:40px;padding:28px;background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);">
       <h3 style="margin-bottom:8px;">Join the Lab</h3>
-      <p style="color:var(--text-secondary);margin-bottom:16px;">We welcome motivated students and researchers interested in computational biology and bioinformatics. If you are interested in joining, please see our <a href="/contact">contact page</a> for information on open positions.</p>
+      <p style="color:var(--text-secondary);margin-bottom:16px;">{{ cms_page.extra.join_text }} If you are interested in joining, please see our <a href="/contact">contact page</a> for information on open positions.</p>
       <a href="/contact" class="btn-lab btn-lab-primary btn-sm">Learn About Joining →</a>
     </div>
   </div>

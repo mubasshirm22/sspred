@@ -1,0 +1,42 @@
+{
+  "results": [
+    {
+      "matches": [
+        {
+          "signature": {
+            "accession": "PF01431",
+            "name": "Peptidase_M13",
+            "entry": {
+              "accession": "IPR000001",
+              "description": "Peptidase M13 family",
+              "type": "DOMAIN"
+            },
+            "signatureLibraryRelease": {
+              "library": "Pfam"
+            }
+          },
+          "locations": [
+            {"start": 42, "end": 215, "evalue": 1e-30}
+          ]
+        },
+        {
+          "signature": {
+            "accession": "PS50001",
+            "name": "Catalytic_site",
+            "entry": {
+              "accession": "IPR000002",
+              "description": "Catalytic site",
+              "type": "ACTIVE_SITE"
+            },
+            "signatureLibraryRelease": {
+              "library": "PrositeProfiles"
+            }
+          },
+          "locations": [
+            {"start": 583, "end": 583, "evalue": 1e-8}
+          ]
+        }
+      ]
+    }
+  ]
+}

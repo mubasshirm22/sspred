@@ -48,22 +48,36 @@ def get(seq):
 			print("Yaspin RAW (first 400 chars):", requesturl.text[:400])
 		except Exception:
 			pass
-		
-		raw = requesturl.text.splitlines()
-		
-		for i in range(len(raw)):		
-			if raw[i].startswith(" Pred:"):
-				SS.pred += raw[i][6:].strip()
-			if raw[i].startswith(" Conf:"):
-				SS.conf += raw[i][6:].strip()
-		
-		SS.pred = SS.pred.replace('-','C')
-
-		SS.status = 1
-		print("Yaspin Complete")
+		parsed = _parse_results_output(requesturl.text)
+		if parsed is None:
+			SS.pred += "Could not parse YASPIN results.out output"
+			SS.conf += "Could not parse YASPIN results.out output"
+			SS.status = 2
+			print("YASPIN failed: parse error")
+		else:
+			SS.pred = parsed["pred"]
+			SS.conf = parsed["conf"]
+			SS.status = 1
+			print("Yaspin Complete")
 	else:
 		SS.pred += "failed to respond in time (Yaspin results.out did not become available)"
 		SS.conf += "failed to respond in time (Yaspin results.out did not become available)"
 		SS.status = 2 #error status
 		print("YASPIN failed: No response")
 	return SS
+
+
+def _parse_results_output(text):
+	pred = ""
+	conf = ""
+	for raw_line in text.splitlines():
+		if raw_line.startswith(" Pred:"):
+			pred += raw_line[6:].strip()
+		elif raw_line.startswith(" Conf:"):
+			conf += raw_line[6:].strip()
+	if not pred:
+		return None
+	return {
+		"pred": pred.replace('-', 'C'),
+		"conf": conf,
+	}

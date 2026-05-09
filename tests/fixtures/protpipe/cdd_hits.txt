@@ -1,0 +1,3 @@
+#status 0
+Session	RID	Query#	Hit#	PSSM_ID	From	To	E-Value	Bitscore	Accession	Short_name	Incomplete	Superfamily
+sess	rid	1	1	12345	25	210	1e-35	210.0	cl45678	M13_peptidase		no

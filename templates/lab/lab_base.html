@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Singh Lab{% endblock %} — Bioinformatics Lab, Brooklyn College</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/lab.css') }}?v=4">
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
 
@@ -35,12 +36,25 @@
               Motif Search
               <span class="dd-badge badge-beta">Beta</span>
             </a>
+            <a href="/tools/structmap">
+              <span class="dd-icon" style="background:#fff1f2;color:#e11d48;">SM</span>
+              StructMap
+              <span class="dd-badge badge-beta">Beta</span>
+            </a>
+            <a href="/tools/disorderpred">
+              <span class="dd-icon" style="background:#f5f3ff;color:#7c3aed;">DP</span>
+              DisorderPred
+              <span class="dd-badge badge-beta">Beta</span>
+            </a>
             <hr>
             <a href="/tools" style="font-size:0.82rem;color:var(--text-light);">All Tools →</a>
           </div>
         </div>
         <a href="/tutorials">Tutorials</a>
         <a href="/contact">Contact</a>
+        {% if cms_current_user %}
+        <a href="/admin/cms" class="nav-tool-btn" style="background:var(--accent-rose);margin-left:4px;">Admin</a>
+        {% endif %}
         <a href="/tools/sspred" class="nav-tool-btn" style="margin-left:4px;">SSPred</a>
         <a href="/tools/protpipe" class="nav-tool-btn" style="background:var(--accent-teal);margin-left:4px;">ProtPipe</a>
       </nav>
@@ -81,8 +95,11 @@
             <li><a href="/tools">All Tools</a></li>
             <li><a href="/tools/sspred">SSPred</a></li>
             <li><a href="/tools/protpipe">ProtPipe</a></li>
+            <li><a href="/tools/structmap">StructMap</a></li>
+            <li><a href="/tools/disorderpred">DisorderPred</a></li>
             <li><a href="/tutorials">Tutorials</a></li>
             <li><a href="/tools/sspred/archive">SSPred Archive</a></li>
+            <li><a href="/admin/login">Admin</a></li>
           </ul>
         </div>
       </div>
@@ -94,6 +111,7 @@
   </footer>
 
   <script src="{{ url_for('static', filename='scripts/lab.js') }}"></script>
+  {% block extra_scripts %}{% endblock %}
   <script>
     // Tools dropdown click-toggle for touch devices
     const dd = document.getElementById('tools-dropdown');

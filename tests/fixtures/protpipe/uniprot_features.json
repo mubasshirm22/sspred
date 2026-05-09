@@ -1,0 +1,46 @@
+{
+  "primaryAccession": "P04637",
+  "features": [
+    {
+      "type": "Region",
+      "location": {
+        "start": { "value": 1, "modifier": "EXACT" },
+        "end": { "value": 44, "modifier": "EXACT" }
+      },
+      "description": "Transcription activation (acidic)"
+    },
+    {
+      "type": "Motif",
+      "location": {
+        "start": { "value": 17, "modifier": "EXACT" },
+        "end": { "value": 25, "modifier": "EXACT" }
+      },
+      "description": "TADI"
+    },
+    {
+      "type": "Binding site",
+      "location": {
+        "start": { "value": 176, "modifier": "EXACT" },
+        "end": { "value": 176, "modifier": "EXACT" }
+      },
+      "description": "",
+      "ligand": { "name": "Zn(2+)" }
+    },
+    {
+      "type": "Helix",
+      "location": {
+        "start": { "value": 278, "modifier": "EXACT" },
+        "end": { "value": 286, "modifier": "EXACT" }
+      },
+      "description": ""
+    },
+    {
+      "type": "Compositional bias",
+      "location": {
+        "start": { "value": 365, "modifier": "EXACT" },
+        "end": { "value": 384, "modifier": "EXACT" }
+      },
+      "description": "Basic residues"
+    }
+  ]
+}

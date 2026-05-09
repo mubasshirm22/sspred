@@ -1,0 +1,152 @@
+{% extends "lab/lab_base.html" %}
+{% block title %}Admin Debug{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="lab-container">
+    <h1>Admin Debug</h1>
+    <p>Live service health, recent job counts, and parser/runtime telemetry.</p>
+  </div>
+</section>
+
+<section class="lab-section" style="padding:40px 0 80px;">
+  <div class="lab-container" style="max-width:1100px;">
+
+    <div class="pipe-result-card" style="margin-bottom:20px;">
+      <div class="pipe-result-card-title">Recent Jobs (last 24 hours)</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
+        {% for scope, counts in recent_counts.items() %}
+        <div style="border:1px solid var(--border);border-radius:10px;padding:14px;">
+          <div style="font-size:0.76rem;font-weight:700;text-transform:uppercase;color:var(--text-light);margin-bottom:8px;">{{ scope }}</div>
+          <div style="font-size:1.6rem;font-weight:800;color:var(--text-primary);">{{ counts.get('total', 0) }}</div>
+          <div style="font-size:0.82rem;color:var(--text-secondary);margin-top:6px;">
+            complete {{ counts.get('complete', 0) }} · error {{ counts.get('error', 0) }} · submitted {{ counts.get('submitted', 0) }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <div style="margin-top:14px;font-size:0.82rem;color:var(--text-secondary);">
+        Active worker threads:
+        {% if active_threads %}
+          <code>{{ active_threads | join(', ') }}</code>
+        {% else %}
+          none
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="pipe-result-card" style="margin-bottom:20px;">
+      <div class="pipe-result-card-title">External Service Health</div>
+      <table class="pipe-table">
+        <thead>
+          <tr><th>Service</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% for name, status in service_status.items() %}
+          <tr>
+            <td>{{ name }}</td>
+            <td>
+              <span class="status-badge {% if status == 'UP' %}up{% elif status == 'RETIRED' %}retired{% else %}down{% endif %}">
+                {{ status }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if protpipe_service_status %}
+    <div class="pipe-result-card" style="margin-bottom:20px;">
+      <div class="pipe-result-card-title">ProtPipe Service Health</div>
+      <table class="pipe-table">
+        <thead>
+          <tr><th>Service</th><th>Status</th><th>Tier</th><th>Note</th></tr>
+        </thead>
+        <tbody>
+          {% for name, item in protpipe_service_status.items() %}
+          <tr>
+            <td>{{ name }}</td>
+            <td>
+              <span class="status-badge {% if item.status == 'UP' %}up{% elif item.status == 'OFFLINE' %}down{% elif item.tier == 'experimental' or item.tier == 'slow' %}warning{% else %}down{% endif %}">
+                {{ item.status }}
+              </span>
+            </td>
+            <td style="text-transform:uppercase;font-size:0.75rem;color:var(--text-light);">{{ item.tier }}</td>
+            <td>{{ item.note }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <div class="pipe-result-card" style="margin-bottom:20px;">
+      <div class="pipe-result-card-title">Component Telemetry</div>
+      <table class="pipe-table">
+        <thead>
+          <tr>
+            <th>Scope</th>
+            <th>Component</th>
+            <th>Last Status</th>
+            <th>Median Runtime</th>
+            <th>Counts</th>
+            <th>Last Summary</th>
+            <th>Last Failure</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in telemetry_snapshot.components %}
+          <tr>
+            <td>{{ row.scope }}</td>
+            <td>{{ row.component }}</td>
+            <td style="text-transform:uppercase;font-weight:700;">{{ row.last_status or '—' }}</td>
+            <td>{% if row.median_runtime_seconds is not none %}{{ row.median_runtime_seconds }} s{% else %}—{% endif %}</td>
+            <td style="font-size:0.8rem;color:var(--text-secondary);">
+              {% for label, count in row.counts.items() %}
+              <div>{{ label }}: {{ count }}</div>
+              {% endfor %}
+            </td>
+            <td style="font-size:0.82rem;">{{ row.last_summary or '—' }}</td>
+            <td style="font-size:0.78rem;">
+              {% if row.last_failure %}
+              <div><strong>{{ row.last_failure.get('at', '') }}</strong></div>
+              <div>{{ row.last_failure.get('summary', '') }}</div>
+              {% if row.last_failure.get('raw_error') %}
+              <div style="margin-top:6px;padding:6px 8px;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;font-family:monospace;color:#9a3412;">{{ row.last_failure.get('raw_error') }}</div>
+              {% endif %}
+              {% else %}
+              —
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if protpipe_recent %}
+    <div class="pipe-result-card">
+      <div class="pipe-result-card-title">Recent ProtPipe Jobs</div>
+      <table class="pipe-table">
+        <thead>
+          <tr><th>Job ID</th><th>Status</th><th>Started</th><th>Finished</th><th>Input</th><th>Length</th></tr>
+        </thead>
+        <tbody>
+          {% for job in protpipe_recent %}
+          <tr>
+            <td><a href="/tools/protpipe/results/{{ job.job_id }}">{{ job.job_id }}</a></td>
+            <td style="text-transform:capitalize;">{{ job.status }}</td>
+            <td>{{ job.started }}</td>
+            <td>{{ job.finished }}</td>
+            <td>{{ job.input_label }}</td>
+            <td>{{ job.length or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

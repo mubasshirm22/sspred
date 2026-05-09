@@ -1,0 +1,241 @@
+{% extends "lab/lab_base.html" %}
+{% block title %}DisorderPred Results — {{ job_id }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.disorder-rail {
+  position: relative;
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #dbeafe 0%, #93c5fd 30%, #fbbf24 65%, #ef4444 100%);
+  overflow: hidden;
+}
+.disorder-range {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  opacity: 0.88;
+}
+.disorder-legend {
+  display:flex;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-top:10px;
+  font-size:0.8rem;
+  color:var(--text-secondary);
+}
+.disorder-legend span::before {
+  content:'';
+  display:inline-block;
+  width:10px;
+  height:10px;
+  border-radius:999px;
+  margin-right:6px;
+  vertical-align:middle;
+  background: var(--c, #94a3b8);
+}
+.disorder-seq {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  line-height: 1.8;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  overflow-x: auto;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% set is_complete = status_data.status == 'complete' %}
+{% set is_error = status_data.status == 'error' %}
+{% set retrieval = (summary.get('retrieval', {}) if is_complete else summary.get('retrieval', {})) %}
+{% set disorder = (summary.get('disorder', {}) if is_complete else {}) %}
+
+<section class="page-hero">
+  <div class="lab-container">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+      <div>
+        <h1>DisorderPred Results</h1>
+        <p>Job ID: <code style="background:rgba(255,255,255,.15);color:#fff;padding:4px 12px;border-radius:5px;">{{ job_id }}</code></p>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a href="/tools/disorderpred" style="padding:9px 18px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:7px;color:#fff;font-size:0.85rem;font-weight:600;text-decoration:none;">New Analysis</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="lab-section" style="padding:40px 0 80px;">
+  <div class="lab-container">
+    {% if is_error %}
+    <div class="pipe-error-diag">
+      <h4>Analysis failed</h4>
+      <p>{{ status_data.get('error') or status_data.get('summary') or 'An unexpected error occurred.' }}</p>
+    </div>
+    {% elif not is_complete %}
+    {% set partial = summary %}
+    <div class="pipe-result-card">
+      <div class="pipe-result-card-title">Analysis Progress</div>
+      <div style="font-size:0.92rem;color:var(--text-secondary);">{{ status_data.get('summary', 'Working...') }}</div>
+      <div style="margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+        {% if partial.get('request', {}).get('submitted_value') %}
+        <div style="border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff;">
+          <div style="font-size:0.72rem;text-transform:uppercase;font-weight:700;color:var(--text-light);">Submitted Input</div>
+          <div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-top:6px;">{{ partial.get('request', {}).get('submitted_value') }}</div>
+        </div>
+        {% endif %}
+        {% if partial.get('request', {}).get('runtime_hint') %}
+        <div style="border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff;">
+          <div style="font-size:0.72rem;text-transform:uppercase;font-weight:700;color:var(--text-light);">Expected Runtime</div>
+          <div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-top:6px;">{{ partial.get('request', {}).get('runtime_hint') }}</div>
+        </div>
+        {% endif %}
+        {% if partial.get('retrieval', {}).get('header') %}
+        <div style="border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff;">
+          <div style="font-size:0.72rem;text-transform:uppercase;font-weight:700;color:var(--text-light);">Resolved Sequence</div>
+          <div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-top:6px;">{{ partial.get('retrieval', {}).get('header') }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <script>
+    const jobId = {{ job_id | tojson }};
+    function pollDisorderStatus() {
+      fetch('/tools/disorderpred/status/' + jobId)
+        .then(r => r.json())
+        .then(data => {
+          if (data.status === 'complete' || data.status === 'error') {
+            window.location.reload();
+            return;
+          }
+          setTimeout(pollDisorderStatus, 5000);
+        })
+        .catch(() => setTimeout(pollDisorderStatus, 8000));
+    }
+    pollDisorderStatus();
+    </script>
+    {% else %}
+    <div class="pipe-result-card" style="margin-bottom:18px;">
+      <div class="pipe-result-card-title">Summary</div>
+      <div class="pipe-stat-grid">
+        <div class="pipe-stat"><div class="pipe-stat-label">Length</div><div class="pipe-stat-value">{{ disorder.length }} aa</div></div>
+        <div class="pipe-stat"><div class="pipe-stat-label">Mean Disorder</div><div class="pipe-stat-value">{{ disorder.mean_disorder }}</div></div>
+        <div class="pipe-stat"><div class="pipe-stat-label">Max Disorder</div><div class="pipe-stat-value">{{ disorder.max_disorder }}</div></div>
+        <div class="pipe-stat"><div class="pipe-stat-label">Disordered Fraction</div><div class="pipe-stat-value">{{ (disorder.disordered_fraction * 100) | round(1) }}%</div></div>
+      </div>
+    </div>
+
+    <div class="pipe-result-card" style="margin-bottom:18px;">
+      <div class="pipe-result-card-title">Disorder Architecture</div>
+      <div style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:12px;">{{ retrieval.get('header') or retrieval.get('resolved_acc') or retrieval.get('source') or 'Sequence' }}</div>
+      <div class="disorder-rail">
+        {% for region in disorder.get('disordered_regions', []) %}
+        <div class="disorder-range" style="left:{{ ((region.start - 1) / disorder.length * 100) | round(3) }}%;width:{{ (((region.end - region.start) + 1) / disorder.length * 100) | round(3) }}%;background:#f59e0b;" title="{{ region.label }} {{ region.start }}-{{ region.end }}"></div>
+        {% endfor %}
+        {% for region in disorder.get('high_disorder_regions', []) %}
+        <div class="disorder-range" style="left:{{ ((region.start - 1) / disorder.length * 100) | round(3) }}%;width:{{ (((region.end - region.start) + 1) / disorder.length * 100) | round(3) }}%;background:#dc2626;" title="{{ region.label }} {{ region.start }}-{{ region.end }}"></div>
+        {% endfor %}
+        {% for region in disorder.get('low_complexity_regions', []) %}
+        <div class="disorder-range" style="left:{{ ((region.start - 1) / disorder.length * 100) | round(3) }}%;width:{{ (((region.end - region.start) + 1) / disorder.length * 100) | round(3) }}%;background:#7c3aed;opacity:0.65;" title="{{ region.label }} {{ region.start }}-{{ region.end }}"></div>
+        {% endfor %}
+      </div>
+      <div class="disorder-legend">
+        <span style="--c:#f59e0b;color:var(--text-secondary);"><span style="display:none;"></span>Disordered region</span>
+        <span style="--c:#dc2626;color:var(--text-secondary);"><span style="display:none;"></span>Highly disordered</span>
+        <span style="--c:#7c3aed;color:var(--text-secondary);"><span style="display:none;"></span>Low complexity</span>
+      </div>
+      <div class="structmap-scale" style="display:flex;justify-content:space-between;gap:8px;margin-top:10px;font-size:0.72rem;color:var(--text-light);">
+        <span>1</span>
+        <span>{{ (disorder.length * 0.25) | round | int }}</span>
+        <span>{{ (disorder.length * 0.5) | round | int }}</span>
+        <span>{{ (disorder.length * 0.75) | round | int }}</span>
+        <span>{{ disorder.length }}</span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-bottom:18px;">
+      <div class="pipe-result-card" style="margin-bottom:0;">
+        <div class="pipe-result-card-title">Disordered Regions</div>
+        {% if disorder.get('disordered_regions') %}
+        <table class="pipe-table">
+          <thead><tr><th>Range</th><th>Mean Score</th></tr></thead>
+          <tbody>
+            {% for region in disorder.get('disordered_regions', []) %}
+            <tr><td>{{ region.start }}-{{ region.end }}</td><td>{{ region.mean_score }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p style="color:var(--text-light);font-size:0.88rem;">No regions exceeded the default disorder threshold.</p>
+        {% endif %}
+      </div>
+      <div class="pipe-result-card" style="margin-bottom:0;">
+        <div class="pipe-result-card-title">High-Disorder / Low-Complexity</div>
+        {% if disorder.get('high_disorder_regions') or disorder.get('low_complexity_regions') %}
+        <table class="pipe-table">
+          <thead><tr><th>Type</th><th>Range</th></tr></thead>
+          <tbody>
+            {% for region in disorder.get('high_disorder_regions', []) %}
+            <tr><td>High disorder</td><td>{{ region.start }}-{{ region.end }}</td></tr>
+            {% endfor %}
+            {% for region in disorder.get('low_complexity_regions', []) %}
+            <tr><td>Low complexity</td><td>{{ region.start }}-{{ region.end }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p style="color:var(--text-light);font-size:0.88rem;">No high-disorder or low-complexity regions were detected.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if disorder.get('comparisons') %}
+    <div class="pipe-result-card" style="margin-bottom:18px;">
+      <div class="pipe-result-card-title">Comparison Predictors</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;">
+        {% for item in disorder.get('comparisons', []) %}
+        <div style="border:1px solid var(--border);border-radius:12px;padding:14px 16px;background:#fff;">
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+            <strong style="font-size:0.92rem;color:var(--text);">{{ item.name }}</strong>
+            <span class="status-badge {% if item.status == 'ok' %}up{% else %}down{% endif %}" style="font-size:10px;padding:2px 7px;">{{ item.status | upper }}</span>
+          </div>
+          {% if item.status == 'ok' %}
+          <div style="font-size:0.82rem;color:var(--text-secondary);margin-top:8px;">Mean score {{ item.mean_score }} · disordered fraction {{ (item.disordered_fraction * 100) | round(1) }}%</div>
+          {% if item.regions %}
+          <div style="margin-top:10px;font-size:0.82rem;color:var(--text-secondary);">
+            {% for region in item.regions %}
+            <div>{{ region.start }}-{{ region.end }} ({{ region.mean_score }})</div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div style="margin-top:10px;font-size:0.82rem;color:var(--text-light);">No long disordered regions at the default threshold.</div>
+          {% endif %}
+          {% else %}
+          <div style="margin-top:10px;font-size:0.82rem;color:#b45309;">{{ item.error }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="pipe-result-card">
+      <div class="pipe-result-card-title">Sequence Overlay</div>
+      <div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:10px;">Sequence, secondary-structure overlay (`H/E/C`), and per-residue disorder score.</div>
+      <div class="disorder-seq">
+        {% for offset in range(0, disorder.length, 50) %}
+        {% set residues = disorder.residues[offset:offset + 50] %}
+        <div>{{ "%4d"|format(offset + 1) }}  {% for res in residues %}{{ res.aa }}{% endfor %}</div>
+        <div>      {% for res in residues %}{{ res.ss or 'C' }}{% endfor %}</div>
+        <div>      {% for res in residues %}{% if res.disorder is not none %}{{ "%.1f"|format(res.disorder) }} {% else %}- {% endif %}{% endfor %}</div>
+        <div style="height:10px;"></div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

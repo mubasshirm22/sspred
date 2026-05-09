@@ -37,7 +37,11 @@
         <div class="pipe-form-section-title">1 — Input Type</div>
         <div class="pipe-input-type-row">
           <label class="pipe-input-type-label">
-            <input type="radio" name="input_type" value="raw_fasta" id="rt-fasta" checked onchange="onInputTypeChange()">
+            <input type="radio" name="input_type" value="auto" id="rt-auto" checked onchange="onInputTypeChange()">
+            Auto-detect
+          </label>
+          <label class="pipe-input-type-label">
+            <input type="radio" name="input_type" value="raw_fasta" id="rt-fasta" onchange="onInputTypeChange()">
             FASTA / raw sequence
           </label>
           <label class="pipe-input-type-label">
@@ -50,7 +54,7 @@
           </label>
         </div>
         <p id="input-hint" style="font-size:0.8rem;color:var(--text-light);margin-top:10px;margin-bottom:0;">
-          Accepts raw amino acid string, single FASTA record, or a UniProt/NCBI accession (e.g. P12345 or NP_000005.2).
+          Paste almost anything protein-related and ProtPipe will choose the right path automatically: FASTA, raw protein sequence, UniProt accession, NCBI protein accession, transcript, contig, or gene ID.
         </p>
       </div>
 
@@ -82,8 +86,14 @@
       <div class="pipe-form-section">
         <div class="pipe-form-section-title">3 — Analyses</div>
         <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:16px;">
-          Basic sequence properties (length, MW, pI, GRAVY, instability) are always computed — no checkbox needed.
+          Basic sequence properties (length, MW, pI, GRAVY, instability) are always computed. Core analyses below are the fast/default path; slower or less stable modules stay available under Advanced.
         </p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+          <button type="button" class="pipe-btn-ghost" onclick="applyAnalysisPreset('core')">Core preset</button>
+          <button type="button" class="pipe-btn-ghost" onclick="applyAnalysisPreset('balanced')">Balanced preset</button>
+          <button type="button" class="pipe-btn-ghost" onclick="applyAnalysisPreset('full')">Full preset</button>
+          <span style="font-size:0.77rem;color:var(--text-light);align-self:center;">Core is the recommended default.</span>
+        </div>
         <div class="pipe-analysis-grid">
 
           <label class="pipe-analysis-option">
@@ -131,31 +141,12 @@
           </label>
 
           <label class="pipe-analysis-option">
-            <input type="checkbox" name="run_signalp">
-            <div>
-              <div class="opt-title">Signal Peptide <span style="font-weight:400;color:var(--text-light);">(SignalP)</span></div>
-              <div class="opt-desc">SignalP-4.1 via EBI. Independent signal peptide cross-validation alongside Phobius. Returns SP residue range and D-score confidence. <em style="color:var(--text-light);">Currently unavailable — EBI endpoint offline.</em></div>
-              <span class="opt-status opt-status-beta">Unavailable</span>
-            </div>
-          </label>
-
-          <label class="pipe-analysis-option">
             <input type="checkbox" name="run_cdd" checked>
             <div>
               <div class="opt-title">CDD Conserved Domains</div>
               <div class="opt-desc">NCBI Batch Web CD-Search. Searches the Conserved Domain Database for structural/functional domains.</div>
               <span class="opt-status opt-status-live">Live</span>
               <span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">~1–2 min</span>
-            </div>
-          </label>
-
-          <label class="pipe-analysis-option">
-            <input type="checkbox" name="run_interproscan">
-            <div>
-              <div class="opt-title">InterProScan</div>
-              <div class="opt-desc">EBI InterProScan — searches Pfam, SMART, CDD, PRINTS, ProSite, HAMAP, Panther, and more. Opt-in only — adds significant time.</div>
-              <span class="opt-status opt-status-live">Live</span>
-              <span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">~5–10 min (slow)</span>
             </div>
           </label>
 
@@ -169,11 +160,12 @@
           </label>
 
           <label class="pipe-analysis-option">
-            <input type="checkbox" name="run_smart" checked>
+            <input type="checkbox" name="run_uniprot_features" checked>
             <div>
-              <div class="opt-title">SMART Domain Architecture</div>
-              <div class="opt-desc">SMART web adapter — domain architecture analysis with focus on signaling and extracellular domains. Best-effort HTML parsing.</div>
-              <span class="opt-status opt-status-beta">Best-effort</span>
+              <div class="opt-title">UniProtKB Feature Map</div>
+              <div class="opt-desc">Uses the official UniProtKB feature API to pull curated domains, motifs, regions, helices, strands, compositional bias, and site annotations when a UniProt accession is available.</div>
+              <span class="opt-status opt-status-live">Live</span>
+              <span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">fast if accession is known</span>
             </div>
           </label>
 
@@ -187,6 +179,77 @@
             </div>
           </label>
 
+          <label class="pipe-analysis-option">
+            <input type="checkbox" name="run_interproscan" checked>
+            <div>
+              <div class="opt-title">InterProScan</div>
+              <div class="opt-desc">Broader integrative annotation across multiple signature databases. Slower than the other core annotations, but useful for expanding domain and site coverage.</div>
+              <span class="opt-status opt-status-live">Live</span>
+              <span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">~5–10 min</span>
+            </div>
+          </label>
+
+        </div>
+
+        <div class="pipe-endpoint-note" style="margin-top:16px;background:#fff7ed;border-color:#fed7aa;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div>
+              <strong>Attachable companion analyses</strong><br>
+              <span style="font-size:0.8rem;color:var(--text-secondary);">These pull focused outputs from the lab’s other tools directly into the ProtPipe report. Keep them off for the lightest workflow, or enable them when you want disorder and secondary-structure context in one place.</span>
+            </div>
+          </div>
+          <div class="pipe-analysis-grid" style="margin-top:14px;">
+            <label class="pipe-analysis-option">
+              <input type="checkbox" name="run_disorderpred">
+              <div>
+                <div class="opt-title">DisorderPred companion</div>
+                <div class="opt-desc">Runs the DisorderPred stack on the resolved sequence and adds disordered-region calls, low-complexity segments, and IUPred3 / ANCHOR2 comparison panels to the ProtPipe report.</div>
+                <span class="opt-status opt-status-live">Companion</span>
+                <span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">~1–4 min</span>
+              </div>
+            </label>
+
+            <label class="pipe-analysis-option">
+              <input type="checkbox" name="run_sspred_companion">
+              <div>
+                <div class="opt-title">SSPred consensus companion</div>
+                <div class="opt-desc">Runs the SSPred service bundle on the same sequence and adds a consensus secondary-structure panel with contributing predictors and compact region calls.</div>
+                <span class="opt-status opt-status-beta">Slower</span>
+                <span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">~5–15 min</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="pipe-endpoint-note" style="margin-top:16px;background:#f8fafc;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <div>
+              <strong>Advanced / experimental modules</strong><br>
+              <span style="font-size:0.8rem;color:var(--text-secondary);">Useful when you want broader coverage, but slower or more brittle than the core path.</span>
+            </div>
+            <button type="button" class="pipe-btn-ghost" onclick="toggleAdvancedModules()" id="advanced-toggle-btn">Show advanced</button>
+          </div>
+          <div id="advanced-modules" style="display:none;margin-top:14px;">
+            <div class="pipe-analysis-grid">
+              <label class="pipe-analysis-option">
+                <input type="checkbox" name="run_smart">
+                <div>
+                  <div class="opt-title">SMART Domain Architecture</div>
+                  <div class="opt-desc">SMART web adapter — useful for signaling/extracellular proteins, but still best-effort HTML parsing.</div>
+                  <span class="opt-status opt-status-beta">Best-effort</span>
+                </div>
+              </label>
+
+              <label class="pipe-analysis-option">
+                <input type="checkbox" name="run_signalp">
+                <div>
+                  <div class="opt-title">Signal Peptide <span style="font-weight:400;color:var(--text-light);">(SignalP)</span></div>
+                  <div class="opt-desc">Independent signal peptide cross-check for Phobius. Keep disabled unless the upstream endpoint comes back.</div>
+                  <span class="opt-status opt-status-beta">Unavailable</span>
+                </div>
+              </label>
+            </div>
+          </div>
         </div>
 
         <div class="pipe-endpoint-note" style="margin-top:16px;">
@@ -194,10 +257,32 @@
         </div>
       </div>
 
+      <div class="pipe-form-section">
+        <div class="pipe-form-section-title">4 — Run Plan</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
+          <div style="border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff;">
+            <div style="font-size:0.74rem;font-weight:700;text-transform:uppercase;color:var(--text-light);">Enabled Modules</div>
+            <div id="run-plan-count" style="font-size:1.7rem;font-weight:800;color:var(--text);margin-top:6px;">{{ initial_run_plan.enabled_modules | length }}</div>
+            <div style="font-size:0.82rem;color:var(--text-secondary);margin-top:6px;">Core analyses plus any advanced extras you enable.</div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff;">
+            <div style="font-size:0.74rem;font-weight:700;text-transform:uppercase;color:var(--text-light);">Expected Feel</div>
+            <div id="run-plan-runtime" style="font-size:0.96rem;font-weight:700;color:var(--accent-teal);margin-top:8px;line-height:1.5;">{{ initial_run_plan.runtime_hint }}</div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff;">
+            <div style="font-size:0.74rem;font-weight:700;text-transform:uppercase;color:var(--text-light);">Selected Modules</div>
+            <div id="run-plan-modules" style="font-size:0.84rem;color:var(--text-secondary);margin-top:8px;line-height:1.6;">{{ initial_run_plan.enabled_modules | join(', ') }}</div>
+          </div>
+        </div>
+        <div id="run-plan-note" class="pipe-endpoint-note" style="margin-top:14px;background:#f8fafc;">
+          ProtPipe now prioritizes a lighter default path. Retrieval and physicochemical properties populate first; slower or brittle modules are optional.
+        </div>
+      </div>
+
       <!-- ── 4. Optional motif search ───────────────────────────── -->
       {% if presets %}
       <div class="pipe-form-section pipe-motif-section">
-        <div class="pipe-form-section-title">4 — Motif Search <span style="font-size:0.7rem;font-weight:400;color:var(--text-light);margin-left:6px;">optional</span></div>
+        <div class="pipe-form-section-title">5 — Motif Search <span style="font-size:0.7rem;font-weight:400;color:var(--text-light);margin-left:6px;">optional</span></div>
 
         <label class="pipe-motif-toggle">
           <input type="checkbox" name="run_motif_search" id="run-motif-chk" onchange="toggleMotifBody(this)">
@@ -255,6 +340,24 @@
 
     </form>
 
+    {% if service_status %}
+    <div class="pipe-form-section" style="margin-top:24px;">
+      <div class="pipe-form-section-title">Live Service Status</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+        {% for name, item in service_status.items() %}
+        <div style="border:1px solid {% if item.status == 'UP' %}#bbf7d0{% elif item.status == 'OFFLINE' %}#fecaca{% elif item.tier == 'experimental' or item.tier == 'slow' %}#fde68a{% else %}var(--border){% endif %};border-radius:12px;padding:14px 16px;background:{% if item.status == 'UP' %}#f0fdf4{% elif item.status == 'OFFLINE' %}#fff5f5{% elif item.tier == 'experimental' or item.tier == 'slow' %}#fffbeb{% else %}#fff{% endif %};">
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+            <div style="font-weight:700;color:var(--text);">{{ name }}</div>
+            <span class="status-badge {% if item.status == 'UP' %}up{% elif item.status == 'OFFLINE' %}down{% elif item.tier == 'experimental' or item.tier == 'slow' %}warning{% else %}down{% endif %}" style="font-size:11px;padding:2px 8px;">{{ item.status }}</span>
+          </div>
+          <div style="font-size:0.74rem;color:var(--text-light);text-transform:uppercase;margin-top:6px;">{{ item.tier }}</div>
+          <div style="font-size:0.82rem;color:var(--text-secondary);margin-top:4px;line-height:1.45;">{{ item.note }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
     <!-- ── What this tool does ─────────────────────────────────── -->
     <div style="margin-top:48px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;">
 
@@ -280,6 +383,7 @@
           <li>Pfam domain hits with coordinates</li>
           <li>Signal peptide detection and cleavage site</li>
           <li>Transmembrane helix count and topology</li>
+          <li>Optional DisorderPred and SSPred companion panels</li>
           <li>SVG domain architecture figure</li>
           <li>Downloadable JSON / TXT / SVG report</li>
         </ul>
@@ -304,13 +408,44 @@
 <script>
 const exampleFasta = `>sp|P04637|P53_HUMAN Cellular tumor antigen p53 OS=Homo sapiens
 MEEPQSDPSVEPPLSQETFSDLWKLLPENNVLSPLPSQAMDDLMLSPDDIEQWFTEDPGPDEAPRMPEAAPPVAPAPAAPTPAAPAPAPSWPLSSSVPSQKTYPQGLNGTVNLFGRNSFEVRVCACPGRDRRTEEENLHKTTGQVMKKVGPDSD`;
+const serviceStatus = {{ service_status | tojson if service_status else '{}' }};
+const moduleLabels = {
+  run_blast: 'BLAST',
+  run_hmmer: 'HMMER',
+  run_phobius: 'Phobius',
+  run_cdd: 'CDD',
+  run_scanprosite: 'ScanProsite',
+  run_uniprot_features: 'UniProtKB features',
+  run_coils: 'Coils',
+  run_smart: 'SMART',
+  run_interproscan: 'InterProScan',
+  run_signalp: 'SignalP',
+  run_disorderpred: 'DisorderPred',
+  run_sspred_companion: 'SSPred consensus',
+};
+const moduleServiceKeys = {
+  run_blast: 'BLAST',
+  run_hmmer: 'HMMER',
+  run_phobius: 'Phobius',
+  run_cdd: 'CDD',
+  run_scanprosite: 'ScanProsite',
+  run_uniprot_features: 'UniProtKB features',
+  run_coils: 'Coils',
+  run_smart: 'SMART',
+  run_interproscan: 'InterProScan',
+  run_signalp: 'SignalP',
+  run_disorderpred: 'DisorderPred',
+  run_sspred_companion: 'SSPred consensus',
+};
 
 const hints = {
+  auto:      'Recommended. ProtPipe auto-detects FASTA/raw protein sequence, UniProt accessions, NCBI protein accessions, transcripts, WGS contigs, and numeric gene IDs.',
   raw_fasta: 'Accepts raw amino acid string (40–5000 residues) or a single FASTA record. Spaces and newlines are ignored.',
   uniprot:   'Enter a UniProt accession, e.g. P04637 (TP53), Q9Y2H9, or A0A000ABC1.',
   ncbi:      'Enter any NCBI accession. Protein (NP_, XP_, WP_) → fetched directly. mRNA/transcript (NM_, XM_), WGS contig (e.g. GAJC01020720.1), or gene ID (numeric) → auto-resolved to linked protein records via NCBI elink. Top candidate is analyzed; all candidates shown in Resolved Proteins tab.',
 };
 const placeholders = {
+  auto:      'Paste FASTA/raw sequence or enter P04637, NP_000535.3, GAJC01020720.1, or a gene ID…',
   raw_fasta: 'Paste a FASTA sequence or raw amino acid string here…',
   uniprot:   'Enter UniProt accession, e.g. P04637',
   ncbi:      'Enter NCBI accession, e.g. NP_000535.3  XP_001234567.1  NM_005228.5  GAJC01020720.1  or a numeric gene ID',
@@ -326,10 +461,17 @@ function onInputTypeChange() {
 
 function onSeqInput() {
   const val = document.querySelector('input[name="input_type"]:checked').value;
-  if (val !== 'raw_fasta') { clearValidation(); return; }
+  if (val !== 'raw_fasta' && val !== 'auto') { clearValidation(); return; }
   const raw = document.getElementById('seq-input').value;
-  const seq = raw.replace(/^>.*$/m,'').replace(/\s/g,'').toUpperCase();
   const stats = document.getElementById('seq-stats');
+  if (!raw.trim()) { stats.textContent = ''; return; }
+  const inferred = inferClientInputType(raw);
+  if (val === 'auto' && inferred !== 'raw_fasta') {
+    stats.textContent = 'Looks like ' + (inferred === 'uniprot' ? 'a UniProt accession' : 'an NCBI identifier');
+    clearValidation();
+    return;
+  }
+  const seq = raw.replace(/^>.*$/m,'').replace(/\s/g,'').toUpperCase();
   if (seq.length === 0) { stats.textContent = ''; return; }
   stats.textContent = seq.length + ' residues';
   if (seq.length < 10) { showValidation('warning', 'Sequence is very short — minimum 10 residues.'); }
@@ -391,7 +533,8 @@ function validateForm() {
     return false;
   }
   const type = document.querySelector('input[name="input_type"]:checked').value;
-  if (type === 'raw_fasta') {
+  const inferred = type === 'auto' ? inferClientInputType(raw) : type;
+  if (inferred === 'raw_fasta') {
     const seq = raw.replace(/^>.*$/m,'').replace(/\s/g,'');
     if (seq.length < 10) {
       showValidation('error', 'Sequence is too short. Minimum 10 residues required.');
@@ -411,6 +554,126 @@ function validateForm() {
   return true;
 }
 
+function inferClientInputType(raw) {
+  const text = (raw || '').trim();
+  if (!text) return 'raw_fasta';
+  if (text.startsWith('>') || text.includes('\n') || text.includes(' ')) return 'raw_fasta';
+  const upper = text.toUpperCase();
+  if (/^(NP_|XP_|WP_|YP_|AP_|ZP_|NM_|XM_|NR_|XR_|NG_|NC_|NW_|NZ_|NT_)/.test(upper)) return 'ncbi';
+  if (/^[A-Z]{4,6}\d{6,}(?:\.\d+)?$/.test(upper)) return 'ncbi';
+  if (/^\d{4,10}$/.test(upper)) return 'ncbi';
+  if (/^[OPQ][0-9][A-Z0-9]{3}[0-9](?:-\d+)?$/.test(upper)) return 'uniprot';
+  if (/^[A-NR-Z][0-9][A-Z0-9]{3}[0-9](?:-\d+)?$/.test(upper)) return 'uniprot';
+  if (/^[A-Z0-9]{10}$/.test(upper)) return 'uniprot';
+  return 'raw_fasta';
+}
+
+function setModule(name, checked) {
+  const node = document.querySelector(`input[name="${name}"]`);
+  if (node) node.checked = checked;
+}
+
+function applyAnalysisPreset(mode) {
+  if (mode === 'core') {
+    setModule('run_blast', true);
+    setModule('run_hmmer', true);
+    setModule('run_phobius', true);
+    setModule('run_cdd', true);
+    setModule('run_scanprosite', true);
+    setModule('run_uniprot_features', true);
+    setModule('run_coils', true);
+    setModule('run_smart', false);
+    setModule('run_interproscan', true);
+    setModule('run_signalp', false);
+    setModule('run_disorderpred', false);
+    setModule('run_sspred_companion', false);
+  } else if (mode === 'balanced') {
+    setModule('run_blast', true);
+    setModule('run_hmmer', true);
+    setModule('run_phobius', true);
+    setModule('run_cdd', true);
+    setModule('run_scanprosite', true);
+    setModule('run_uniprot_features', true);
+    setModule('run_coils', true);
+    setModule('run_smart', true);
+    setModule('run_interproscan', true);
+    setModule('run_signalp', false);
+    setModule('run_disorderpred', true);
+    setModule('run_sspred_companion', false);
+    document.getElementById('advanced-modules').style.display = '';
+    document.getElementById('advanced-toggle-btn').textContent = 'Hide advanced';
+  } else if (mode === 'full') {
+    setModule('run_blast', true);
+    setModule('run_hmmer', true);
+    setModule('run_phobius', true);
+    setModule('run_cdd', true);
+    setModule('run_scanprosite', true);
+    setModule('run_uniprot_features', true);
+    setModule('run_coils', true);
+    setModule('run_smart', true);
+    setModule('run_interproscan', true);
+    setModule('run_signalp', false);
+    setModule('run_disorderpred', true);
+    setModule('run_sspred_companion', true);
+    document.getElementById('advanced-modules').style.display = '';
+    document.getElementById('advanced-toggle-btn').textContent = 'Hide advanced';
+  }
+  updateRunPlan();
+}
+
+function toggleAdvancedModules() {
+  const body = document.getElementById('advanced-modules');
+  const btn = document.getElementById('advanced-toggle-btn');
+  if (!body || !btn) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : '';
+  btn.textContent = open ? 'Show advanced' : 'Hide advanced';
+}
+
+function runtimeHintForModules(selected) {
+  if (selected.includes('InterProScan') || (selected.includes('BLAST') && selected.length >= 7)) {
+    return 'Likely 5-15 minutes depending on remote queues.';
+  }
+  if (selected.includes('SSPred consensus')) {
+    return 'Likely 5-15 minutes depending on remote queues. SSPred companion waits on multiple external predictors.';
+  }
+  if (selected.includes('DisorderPred')) {
+    return 'Usually the main ProtPipe annotations appear quickly; DisorderPred companion may take a few extra minutes.';
+  }
+  if (selected.some(name => ['BLAST', 'SMART', 'SignalP'].includes(name))) {
+    return 'Likely 3-10 minutes depending on remote queues.';
+  }
+  if (selected.length) {
+    return 'Usually the first useful results appear within 30-90 seconds.';
+  }
+  return 'Local property calculation only.';
+}
+
+function updateRunPlan() {
+  const selected = Object.entries(moduleLabels)
+    .filter(([name]) => document.querySelector(`input[name="${name}"]`)?.checked)
+    .map(([name, label]) => label);
+  const degraded = selected.filter(label => {
+    const status = serviceStatus[label]?.status;
+    return status && status !== 'UP';
+  });
+
+  const countEl = document.getElementById('run-plan-count');
+  const runtimeEl = document.getElementById('run-plan-runtime');
+  const modulesEl = document.getElementById('run-plan-modules');
+  const noteEl = document.getElementById('run-plan-note');
+  if (countEl) countEl.textContent = selected.length;
+  if (runtimeEl) runtimeEl.textContent = runtimeHintForModules(selected);
+  if (modulesEl) modulesEl.textContent = selected.length ? selected.join(', ') : 'No remote modules selected.';
+  if (noteEl) {
+    if (degraded.length) {
+      noteEl.innerHTML = `<strong>Heads up:</strong> ${degraded.join(', ')} is currently reported as degraded or offline. The run will still continue, but those outputs may fail or take longer.`;
+    } else {
+      noteEl.innerHTML = 'ProtPipe keeps a lighter default path. Retrieval and physicochemical properties populate first; companion analyses and slower modules are optional add-ons.';
+    }
+  }
+}
+
 // ── Motif section toggle ──────────────────────────────────────
 function toggleMotifBody(chk) {
   const body = document.getElementById('pipe-motif-body');
@@ -427,5 +690,11 @@ function motifCustomPreview() {
   wrap.style.display = '';
   prev.textContent = val;  // show raw input as typed — server canonicalises it
 }
+
+applyAnalysisPreset('core');
+document.querySelectorAll('.pipe-analysis-grid input[type="checkbox"], #advanced-modules input[type="checkbox"]').forEach(node => {
+  node.addEventListener('change', updateRunPlan);
+});
+updateRunPlan();
 </script>
 {% endblock %}

@@ -1,0 +1,18 @@
+{
+  "results": {
+    "hits": [
+      {
+        "acc": "PF01431.27",
+        "desc": "Peptidase family M13",
+        "evalue": 1.2e-30,
+        "domains": [
+          {
+            "iali": 42,
+            "jali": 215,
+            "ievalue": 2.5e-31
+          }
+        ]
+      }
+    ]
+  }
+}

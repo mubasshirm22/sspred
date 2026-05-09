@@ -5,8 +5,8 @@
 
 <section class="page-hero">
   <div class="lab-container">
-    <h1>Research</h1>
-    <p>Computational approaches to structure, function, and evolution of biological molecules.</p>
+    <h1>{{ cms_page.title }}</h1>
+    <p>{{ cms_page.subtitle }}</p>
   </div>
 </section>
 
@@ -50,52 +50,19 @@
   <div class="lab-container">
     <p class="section-label">Publications</p>
     <h2 class="section-title">Selected Research &amp; Scholarship</h2>
+    {% if cms_page.body %}
+    <p class="section-subtitle" style="margin-bottom:24px;max-width:820px;">{{ cms_page.body }}</p>
+    {% endif %}
     <div class="pub-list" style="margin-top:8px;">
-
+      {% for item in cms_publications %}
       <div class="pub-item">
-        <div class="pub-year">2025</div>
-        <p>Chou J, Li MZ, Wey B, Mumtaz M, Ramroop JR, Singh S, Govind S. <strong>Venomous Cargo: Diverse Toxin-Related Proteins Are Associated with Extracellular Vesicles in Parasitoid Wasp Venom.</strong> <em>Pathogens.</em> 2025 Mar 5;14(3).</p>
-        <a class="pub-doi" href="https://doi.org/10.3390/pathogens14030255" target="_blank" rel="noopener">doi: 10.3390/pathogens14030255 · PubMed: 40137740</a>
+        <div class="pub-year">{{ item.year }}</div>
+        <p>{{ item.citation }}</p>
+        {% if item.link_url %}
+        <a class="pub-doi" href="{{ item.link_url }}" target="_blank" rel="noopener">{{ item.link_label or item.link_url }}</a>
+        {% endif %}
       </div>
-
-      <div class="pub-item">
-        <div class="pub-year">2025</div>
-        <p>Aksoy M, Krupitskaya M, Singh SM. <strong>A Genome-Wide Modeling and Characterization Study of Pleckstrin Homology Domains in Chlamydomonas reinhardtii.</strong> <em>Plants (Basel).</em> 2025 Aug 22;14(17).</p>
-        <a class="pub-doi" href="https://doi.org/10.3390/plants14172607" target="_blank" rel="noopener">doi: 10.3390/plants14172607 · PubMed: 40941772</a>
-      </div>
-
-      <div class="pub-item">
-        <div class="pub-year">2025</div>
-        <p>Eichner AS, Zimmerman N, San A, Singh S. <strong>In Silico Analysis of Human NEK10 Reveals Novel Domain Architecture and Protein-Protein Interactions.</strong> <em>Proteins.</em> 2025 Oct 3. [Epub ahead of print]</p>
-        <a class="pub-doi" href="https://doi.org/10.1002/prot.70067" target="_blank" rel="noopener">doi: 10.1002/prot.70067 · PubMed: 41044802</a>
-      </div>
-
-      <div class="pub-item">
-        <div class="pub-year">2025</div>
-        <p>Guest editor of Special Issue <strong>"Computational Approaches in Mechanisms of Pathogenesis"</strong> for the open-access MDPI journal <em>Pathogens</em>, 2025.</p>
-      </div>
-
-      <div class="pub-item">
-        <div class="pub-year">2024</div>
-        <p>Power KM, Nguyen KC, Silva A, Singh S, Hall DH, Rongo C, Barr MM. <strong>NEKL-4 regulates microtubule stability and mitochondrial health in ciliated neurons.</strong> <em>J Cell Biol.</em> 2024 Sep 2;223(9).</p>
-        <a class="pub-doi" href="https://doi.org/10.1083/jcb.202402006" target="_blank" rel="noopener">doi: 10.1083/jcb.202402006 · PubMed: 38767515</a>
-      </div>
-
-      <div class="pub-item">
-        <div class="pub-year">2023</div>
-        <p>Arguelles J, Lee J, Cardenas LV, Govind S, Singh S. <strong>In Silico Analysis of a Drosophila Parasitoid Venom Peptide Reveals Prevalence of the Cation-Polar-Cation Clip Motif in Knottin Proteins.</strong> <em>Pathogens</em> 2023, 12, 143.</p>
-        <a class="pub-doi" href="https://doi.org/10.3390/pathogens12010143" target="_blank" rel="noopener">doi: 10.3390/pathogens12010143</a>
-      </div>
-
-      <div class="pub-item">
-        <div class="pub-year">2022</div>
-        <p>Jalali S, Yang Y, Mahmoudinobar F, Singh SM, Nilsson B, Dias C. <strong>Using large-scale and long-time all-atom simulations to study the aggregation of amphipathic peptides into amyloid-like fibrils.</strong> <em>Journal of Molecular Liquids</em> 347, 118283.</p>
-      </div>
-
-      <div class="pub-item">
-        <div class="pub-year">2021</div>
-        <p>Murph M, Singh S, Schvarzstein M. <strong>The Centrosomal Swiss Army Knife: A combined in silico and in vivo approach to the structure-function annotation of SPD-2 provides mechanistic insight into its functional diversity.</strong> <em>Cell Cycle</em> (In press; preprint available from bioRxiv 2021.04.22.441031).</p>
-      </div>
+      {% endfor %}
 
     </div>
   </div>

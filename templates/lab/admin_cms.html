@@ -1,0 +1,311 @@
+{% extends "lab/lab_base.html" %}
+{% block title %}Admin CMS{% endblock %}
+
+{% block extra_head %}
+<style>
+.cms-image-preview {
+  width: 68px;
+  height: 68px;
+  border-radius: 18px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+  display: block;
+}
+.cms-image-preview.is-empty {
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.cms-image-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cms-image-meta {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="lab-container">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <div>
+        <h1>Admin CMS</h1>
+        <p>Edit announcements, team members, contact info, and publications from one place.</p>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <span style="padding:9px 14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:999px;color:#fff;font-size:0.82rem;font-weight:600;">{{ current_user.email }} · {{ current_user.role }}</span>
+        <a href="/admin/logout" style="padding:9px 18px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:7px;color:#fff;font-size:0.85rem;font-weight:600;text-decoration:none;">Log Out</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="lab-section" style="padding:40px 0 80px;">
+  <div class="lab-container" style="max-width:1100px;">
+    <div class="pipe-form-section" style="margin-bottom:20px;background:#f8fafc;">
+      <div class="pipe-form-section-title">Quick Navigation</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a class="btn-lab btn-lab-outline btn-sm" href="#announcements">Announcements</a>
+        <a class="btn-lab btn-lab-outline btn-sm" href="#team-page">Team Page</a>
+        <a class="btn-lab btn-lab-outline btn-sm" href="#team-members">Team Members</a>
+        <a class="btn-lab btn-lab-outline btn-sm" href="#contact-page">Contact</a>
+        <a class="btn-lab btn-lab-outline btn-sm" href="#research-page">Research / Pubs</a>
+        {% if current_user.role == 'admin' %}
+        <a class="btn-lab btn-lab-outline btn-sm" href="#cms-users">CMS Users</a>
+        {% endif %}
+      </div>
+    </div>
+    <div style="display:grid;gap:20px;">
+
+      <div class="pipe-form-section" id="announcements">
+        <div class="pipe-form-section-title">Announcements</div>
+        <div style="display:grid;gap:12px;margin-bottom:18px;">
+          {% for item in news_items %}
+          <form method="POST" action="/admin/cms" style="border:1px solid var(--border);border-radius:12px;padding:14px;background:#fff;">
+            <input type="hidden" name="action" value="save_news">
+            <input type="hidden" name="news_id" value="{{ item.id }}">
+            <div style="display:grid;grid-template-columns:180px 1fr;gap:10px;margin-bottom:10px;">
+              <input type="text" name="date_label" value="{{ item.date_label }}" placeholder="Date label" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              <input type="text" name="title" value="{{ item.title }}" placeholder="Title" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            </div>
+            <textarea name="body" rows="3" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;">{{ item.body }}</textarea>
+            <div style="display:grid;grid-template-columns:1fr 1fr 120px auto auto;gap:10px;margin-top:10px;">
+              <input type="text" name="link_text" value="{{ item.link_text }}" placeholder="Link text" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              <input type="text" name="link_url" value="{{ item.link_url }}" placeholder="Link URL" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              <input type="number" name="sort_order" value="{{ item.sort_order or loop.index0 }}" placeholder="Sort" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              <button class="btn-lab btn-lab-primary btn-sm" type="submit">Save</button>
+              <button class="btn-lab btn-lab-outline btn-sm" type="submit" formaction="/admin/cms" formmethod="post" name="action" value="delete_news">Delete</button>
+            </div>
+          </form>
+          {% endfor %}
+        </div>
+        <form method="POST" action="/admin/cms" style="border:1px dashed var(--border);border-radius:12px;padding:14px;background:#fff;">
+          <input type="hidden" name="action" value="save_news">
+          <div style="font-size:0.84rem;font-weight:700;color:var(--text);margin-bottom:10px;">Add announcement</div>
+          <div style="display:grid;grid-template-columns:180px 1fr;gap:10px;margin-bottom:10px;">
+            <input type="text" name="date_label" placeholder="Date label" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            <input type="text" name="title" placeholder="Title" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+          </div>
+          <textarea name="body" rows="3" placeholder="Announcement body" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;"></textarea>
+          <div style="display:grid;grid-template-columns:1fr 1fr 120px auto;gap:10px;margin-top:10px;">
+            <input type="text" name="link_text" placeholder="Link text" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            <input type="text" name="link_url" placeholder="Link URL" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            <input type="number" name="sort_order" value="0" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            <button class="btn-lab btn-lab-primary btn-sm" type="submit">Add</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="pipe-form-section" id="team-page">
+        <div class="pipe-form-section-title">Team Page</div>
+        <form method="POST" action="/admin/cms">
+          <input type="hidden" name="action" value="save_team_page">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <input type="text" name="title" value="{{ team_page.title }}" placeholder="Page title" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            <input type="text" name="subtitle" value="{{ team_page.subtitle }}" placeholder="Subtitle" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <input type="text" name="pi_name" value="{{ team_page.extra.pi_name }}" placeholder="PI name" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            <input type="text" name="pi_title" value="{{ team_page.extra.pi_title }}" placeholder="PI title" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+          </div>
+          <textarea name="pi_bio" rows="4" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">{{ team_page.extra.pi_bio }}</textarea>
+          <textarea name="pi_education" rows="4" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">{{ team_page.extra.pi_education | join('\n') }}</textarea>
+          <textarea name="join_text" rows="2" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">{{ team_page.extra.join_text }}</textarea>
+          <button class="btn-lab btn-lab-primary btn-sm" type="submit">Save Team Page</button>
+        </form>
+      </div>
+
+      <div class="pipe-form-section" id="team-members">
+        <div class="pipe-form-section-title">Team Members</div>
+        <div style="display:grid;gap:12px;margin-bottom:18px;">
+          {% for member in team_members %}
+          <form method="POST" action="/admin/cms" enctype="multipart/form-data" style="border:1px solid var(--border);border-radius:12px;padding:14px;background:#fff;">
+            <input type="hidden" name="action" value="save_team_member">
+            <input type="hidden" name="member_id" value="{{ member.id }}">
+            <div style="display:grid;grid-template-columns:1fr 1fr 140px 100px;gap:10px;margin-bottom:10px;">
+              <input type="text" name="name" value="{{ member.name }}" placeholder="Name" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              <input type="text" name="role" value="{{ member.role }}" placeholder="Role" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              <input type="text" name="section" value="{{ member.section }}" placeholder="Section" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              <input type="text" name="initials" value="{{ member.initials }}" placeholder="Initials" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            </div>
+            <textarea name="bio" rows="3" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;">{{ member.bio }}</textarea>
+            <div style="display:grid;grid-template-columns:140px 1fr auto auto;gap:10px;margin-top:10px;align-items:center;">
+              <input type="number" name="sort_order" value="{{ member.sort_order or loop.index0 }}" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              <div class="cms-image-preview-row">
+                {% if member.image_path %}
+                <img src="{{ member.image_path }}" alt="{{ member.name }}" class="cms-image-preview" data-image-preview>
+                {% else %}
+                <div class="cms-image-preview is-empty" data-image-preview>No image</div>
+                {% endif %}
+                <div class="cms-image-meta">
+                  <div>{{ member.image_path or "Upload headshot" }}</div>
+                  <input type="file" name="image_file" accept=".png,.jpg,.jpeg,.webp" data-preview-input>
+                </div>
+              </div>
+              <button class="btn-lab btn-lab-primary btn-sm" type="submit">Save</button>
+              <button class="btn-lab btn-lab-outline btn-sm" type="submit" formaction="/admin/cms" formmethod="post" name="action" value="delete_team_member">Delete</button>
+            </div>
+          </form>
+          {% endfor %}
+        </div>
+        <form method="POST" action="/admin/cms" enctype="multipart/form-data" style="border:1px dashed var(--border);border-radius:12px;padding:14px;background:#fff;">
+          <input type="hidden" name="action" value="save_team_member">
+          <div style="font-size:0.84rem;font-weight:700;color:var(--text);margin-bottom:10px;">Add team member</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 140px 100px;gap:10px;margin-bottom:10px;">
+            <input type="text" name="name" placeholder="Name" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            <input type="text" name="role" placeholder="Role" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            <input type="text" name="section" value="members" placeholder="Section" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            <input type="text" name="initials" placeholder="Initials" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+          </div>
+          <textarea name="bio" rows="3" placeholder="Bio" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;"></textarea>
+          <div style="display:grid;grid-template-columns:140px 1fr auto;gap:10px;margin-top:10px;align-items:center;">
+            <input type="number" name="sort_order" value="0" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            <div class="cms-image-preview-row">
+              <div class="cms-image-preview is-empty" data-image-preview>No image</div>
+              <div class="cms-image-meta">
+                <div>Upload headshot</div>
+                <input type="file" name="image_file" accept=".png,.jpg,.jpeg,.webp" data-preview-input>
+              </div>
+            </div>
+            <button class="btn-lab btn-lab-primary btn-sm" type="submit">Add</button>
+          </div>
+        </form>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div class="pipe-form-section" id="contact-page" style="margin-bottom:0;">
+          <div class="pipe-form-section-title">Contact Page</div>
+          <form method="POST" action="/admin/cms">
+            <input type="hidden" name="action" value="save_contact_page">
+            <input type="text" name="title" value="{{ contact_page.title }}" placeholder="Page title" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">
+            <input type="text" name="subtitle" value="{{ contact_page.subtitle }}" placeholder="Subtitle" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">
+            <textarea name="address" rows="3" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">{{ contact_page.extra.address }}</textarea>
+            <input type="text" name="email" value="{{ contact_page.extra.email }}" placeholder="Email" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">
+            <input type="text" name="institution" value="{{ contact_page.extra.institution }}" placeholder="Institution" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">
+            <textarea name="graduate_text" rows="3" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">{{ contact_page.extra.graduate_text }}</textarea>
+            <textarea name="undergrad_text" rows="3" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">{{ contact_page.extra.undergrad_text }}</textarea>
+            <textarea name="postdoc_text" rows="3" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">{{ contact_page.extra.postdoc_text }}</textarea>
+            <button class="btn-lab btn-lab-primary btn-sm" type="submit">Save Contact Page</button>
+          </form>
+        </div>
+
+        <div class="pipe-form-section" id="research-page" style="margin-bottom:0;">
+          <div class="pipe-form-section-title">Research / Publications</div>
+          <form method="POST" action="/admin/cms" style="margin-bottom:16px;">
+            <input type="hidden" name="action" value="save_research_page">
+            <input type="text" name="title" value="{{ research_page.title }}" placeholder="Page title" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">
+            <input type="text" name="subtitle" value="{{ research_page.subtitle }}" placeholder="Subtitle" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">
+            <textarea name="body" rows="3" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">{{ research_page.body }}</textarea>
+            <button class="btn-lab btn-lab-primary btn-sm" type="submit">Save Research Intro</button>
+          </form>
+
+          <div style="display:grid;gap:10px;">
+            {% for item in publications %}
+            <form method="POST" action="/admin/cms" style="border:1px solid var(--border);border-radius:12px;padding:12px;background:#fff;">
+              <input type="hidden" name="action" value="save_publication">
+              <input type="hidden" name="pub_id" value="{{ item.id }}">
+              <div style="display:grid;grid-template-columns:100px 120px 1fr;gap:10px;margin-bottom:10px;">
+                <input type="text" name="year" value="{{ item.year }}" placeholder="Year" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+                <input type="number" name="sort_order" value="{{ item.sort_order or loop.index0 }}" placeholder="Sort" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+                <input type="text" name="link_label" value="{{ item.link_label }}" placeholder="Link label" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              </div>
+              <textarea name="citation" rows="3" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">{{ item.citation }}</textarea>
+              <div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;">
+                <input type="text" name="link_url" value="{{ item.link_url }}" placeholder="Link URL" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+                <button class="btn-lab btn-lab-primary btn-sm" type="submit">Save</button>
+                <button class="btn-lab btn-lab-outline btn-sm" type="submit" formaction="/admin/cms" formmethod="post" name="action" value="delete_publication">Delete</button>
+              </div>
+            </form>
+            {% endfor %}
+          </div>
+
+          <form method="POST" action="/admin/cms" style="border:1px dashed var(--border);border-radius:12px;padding:12px;background:#fff;margin-top:12px;">
+            <input type="hidden" name="action" value="save_publication">
+            <div style="font-size:0.84rem;font-weight:700;color:var(--text);margin-bottom:10px;">Add publication</div>
+            <div style="display:grid;grid-template-columns:100px 120px 1fr;gap:10px;margin-bottom:10px;">
+              <input type="text" name="year" placeholder="Year" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              <input type="number" name="sort_order" value="0" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              <input type="text" name="link_label" placeholder="Link label" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            </div>
+            <textarea name="citation" rows="3" placeholder="Citation" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;"></textarea>
+            <div style="display:grid;grid-template-columns:1fr auto;gap:10px;">
+              <input type="text" name="link_url" placeholder="Link URL" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              <button class="btn-lab btn-lab-primary btn-sm" type="submit">Add</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {% if current_user.role == 'admin' %}
+      <div class="pipe-form-section" id="cms-users">
+        <div class="pipe-form-section-title">CMS Users</div>
+        <div style="display:grid;gap:10px;margin-bottom:14px;">
+          {% for item in cms_users %}
+          <form method="POST" action="/admin/cms" style="display:grid;grid-template-columns:1fr 140px 140px auto auto;gap:10px;align-items:center;border:1px solid var(--border);border-radius:10px;padding:12px;background:#fff;">
+            <input type="hidden" name="action" value="save_user">
+            <input type="text" name="email" value="{{ item.email }}" readonly style="padding:10px;border:1px solid var(--border);border-radius:8px;background:#f8fafc;">
+            <select name="role" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              <option value="editor" {% if item.role == 'editor' %}selected{% endif %}>Editor</option>
+              <option value="admin" {% if item.role == 'admin' %}selected{% endif %}>Admin</option>
+            </select>
+            <select name="active" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              <option value="1" {% if item.active %}selected{% endif %}>Active</option>
+              <option value="0" {% if not item.active %}selected{% endif %}>Inactive</option>
+            </select>
+            <button class="btn-lab btn-lab-primary btn-sm" type="submit">Save</button>
+            <button class="btn-lab btn-lab-outline btn-sm" type="submit" formaction="/admin/cms" formmethod="post" name="action" value="delete_user">Delete</button>
+          </form>
+          {% endfor %}
+        </div>
+
+        <form method="POST" action="/admin/cms" style="display:grid;grid-template-columns:1fr 140px auto;gap:10px;">
+          <input type="hidden" name="action" value="save_user">
+          <input type="email" name="email" placeholder="new.user@example.edu" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+          <select name="role" style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            <option value="editor">Editor</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button class="btn-lab btn-lab-primary btn-sm" type="submit">Add User</button>
+          <input type="hidden" name="active" value="1">
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+<script>
+document.querySelectorAll('[data-preview-input]').forEach(function (input) {
+  input.addEventListener('change', function () {
+    const row = input.closest('.cms-image-preview-row');
+    const preview = row ? row.querySelector('[data-image-preview]') : null;
+    const file = input.files && input.files[0];
+    if (!preview || !file) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      if (preview.tagName === 'IMG') {
+        preview.src = event.target.result;
+      } else {
+        const image = document.createElement('img');
+        image.className = 'cms-image-preview';
+        image.setAttribute('data-image-preview', '');
+        image.src = event.target.result;
+        preview.replaceWith(image);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+});
+</script>
+{% endblock %}

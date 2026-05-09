@@ -23,10 +23,41 @@
 <section class="lab-section" style="padding:48px 0 80px;">
   <div class="lab-container" style="max-width:860px;">
 
+    {% if server_jobs %}
+    <div class="pipe-result-card" style="margin-bottom:28px;">
+      <div class="pipe-result-card-title">Server Archive</div>
+      <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:16px;">
+        These jobs are read directly from the server-side job folders, so they remain available even if browser storage is cleared.
+      </p>
+      <table class="pipe-table">
+        <thead>
+          <tr>
+            <th>Job ID</th>
+            <th>Input</th>
+            <th>Status</th>
+            <th>Started</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for job in server_jobs %}
+          <tr class="pipe-archive-row">
+            <td style="font-family:monospace;font-size:0.82rem;">{{ job.job_id }}</td>
+            <td title="{{ job.input_label }}">{{ job.input_label }}</td>
+            <td style="text-transform:capitalize;">{{ job.status }}</td>
+            <td style="font-size:0.8rem;color:var(--text-light);">{{ job.started or '—' }}</td>
+            <td><a href="/tools/protpipe/results/{{ job.job_id }}" class="btn-lab btn-lab-primary btn-sm" style="background:var(--accent-teal);">View Results</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
     <!-- Info note -->
     <div class="pipe-endpoint-note" style="margin-bottom:28px;">
-      <strong>Browser-local archive</strong>
-      Job history is stored in your browser's localStorage. Clearing browser data will remove this list, but job results remain accessible via direct URL as long as the server retains them.
+      <strong>Browser-local history</strong>
+      This list is still kept in your browser for quick access. Clearing browser data removes this section only; the server archive above remains available as long as the job folders are retained.
     </div>
 
     <!-- Empty state -->

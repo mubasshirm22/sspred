@@ -1,0 +1,5 @@
+Protein Structure Predictions for test
+Predicted Secondary Structure (3 Class):
+CCEEHHCC
+
+Confidence values unavailable

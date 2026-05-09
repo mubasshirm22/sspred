@@ -1,32 +1,38 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.8/socket.io.min.js" type="text/javascript">
-	</script>
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js">
-	</script>
-	<script src="{{url_for('static', filename='scripts/html2canvas.js')}}"></script>
-	<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/style.css')}}?v=2.0">
-	<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/tooltip.css')}}">
-	<title>Prediction Results</title>
-	<meta name='viewport' content='width=device-width, initial-scale=1.0'><meta name="autorefresh" http-equiv='refresh' content='30'>
-</head>
-<body>
-	<header class="header">
-		<div class="header-content">
-			<a href="/tools/sspred" class="logo">SSPred</a>
-			<nav class="nav-links">
-				<a href="/tools/sspred">Submit</a>
-				<a href="/tools/sspred/archive">Archive</a>
-				<a href="/">Singh Lab</a>
-			</nav>
-		</div>
-	</header>
+{% extends "lab/lab_base.html" %}
+{% block title %}SSPred Results{% endblock %}
 
-	<div class="main-container no-sidebar">
+{% block extra_head %}
+	<script src="{{ url_for('static', filename='scripts/html2canvas.js') }}"></script>
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}?v=2.1">
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/tooltip.css') }}">
+	<meta name='autorefresh' http-equiv='refresh' content='30'>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+	<div class="lab-container">
+		<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+			<div>
+				<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+					<span style="background:rgba(255,255,255,.15);color:#fff;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:4px 12px;border-radius:999px;">Results</span>
+				</div>
+				<h1>SSPred Results</h1>
+				<p>Track each remote predictor as it completes and compare the combined secondary-structure output in real time.</p>
+			</div>
+			<div style="display:flex;gap:10px;flex-wrap:wrap;align-self:flex-start;">
+				<a href="/tools/sspred" style="padding:9px 18px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:7px;color:#fff;font-size:0.85rem;font-weight:600;text-decoration:none;">New Submission</a>
+				<a href="/tools/sspred/archive" style="padding:9px 18px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:7px;color:#fff;font-size:0.85rem;font-weight:600;text-decoration:none;">Archive</a>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="lab-section" style="padding:40px 0 80px;">
+	<div class="lab-container">
+	<div class="main-container no-sidebar" style="padding:0;">
 		<main class="main-content">
 			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-				<a id='home' href='' class="btn btn-secondary">← Back to Home</a>
+				<a id='home' href='/tools/sspred' class="btn btn-secondary">← Back to Home</a>
 				<button id="toggle-view" class="btn btn-secondary" onclick="toggleViewMode()">View Original Format</button>
 			</div>
 			<h1 class="page-title">Prediction Results</h1>
@@ -38,6 +44,7 @@
 			</div>
 			
 			<div id="progress-container" class="progress-container"></div>
+			<div id="failure-summary" style="display:none;margin-bottom:20px;"></div>
 			
 			<div id='statusmessages' style="display: none;">
 				<b>Service Status:</b><br/>
@@ -187,6 +194,68 @@
 				</div>
 
 				<div class="form-section">
+					<div class="form-section-title">Publication Figure</div>
+					<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
+						<div>
+							<label style="font-size:0.78rem;font-weight:700;color:var(--text-light);text-transform:uppercase;">Tracks</label>
+							<div style="margin-top:8px;display:grid;gap:6px;" id="pub-track-controls">
+								<label><input type="checkbox" id="pub-sequence" checked> Sequence</label>
+								<label><input type="checkbox" id="pub-consensus" checked> Consensus</label>
+								<label class="enableWithPDB"><input type="checkbox" id="pub-pdb" checked> Known structure</label>
+								<label><input type="checkbox" id="pub-confidence" checked> Consensus support</label>
+								<div id="pub-predictor-controls" style="display:grid;gap:6px;margin-top:4px;"></div>
+							</div>
+						</div>
+						<div>
+							<label style="font-size:0.78rem;font-weight:700;color:var(--text-light);text-transform:uppercase;">Style</label>
+							<select id="pub-style" style="margin-top:8px;">
+								<option value="journal">Journal</option>
+								<option value="presentation">Presentation</option>
+								<option value="bw">Black &amp; White</option>
+							</select>
+							<label style="font-size:0.78rem;font-weight:700;color:var(--text-light);text-transform:uppercase;display:block;margin-top:14px;">Palette</label>
+							<select id="pub-palette" style="margin-top:8px;">
+								<option value="colorblind">Colorblind-safe</option>
+								<option value="muted">Muted journal</option>
+								<option value="grayscale">Grayscale</option>
+							</select>
+							<label style="font-size:0.78rem;font-weight:700;color:var(--text-light);text-transform:uppercase;display:block;margin-top:14px;">Figure Title</label>
+							<input type="text" id="pub-title" value="SSPred Secondary Structure Summary" style="margin-top:8px;">
+						</div>
+						<div>
+							<label style="font-size:0.78rem;font-weight:700;color:var(--text-light);text-transform:uppercase;">Options</label>
+							<div style="margin-top:8px;display:grid;gap:6px;">
+								<label><input type="checkbox" id="pub-legend" checked> Show legend</label>
+								<label><input type="checkbox" id="pub-clean"> Clean figure mode</label>
+								<label class="enableWithPDB"><input type="checkbox" id="pub-compare"> Highlight consensus mismatches</label>
+							</div>
+							<label style="font-size:0.78rem;font-weight:700;color:var(--text-light);text-transform:uppercase;display:block;margin-top:14px;">Annotated Regions</label>
+							<textarea id="pub-regions" rows="5" style="margin-top:8px;font-family:monospace;" placeholder="25-48: Helix-rich region&#10;120-155: Beta sheet patch"></textarea>
+							<div style="font-size:0.76rem;color:var(--text-light);margin-top:6px;">Format: <code>start-end: label</code></div>
+						</div>
+					</div>
+					<div class="button-group" style="margin-top:18px;">
+						<button id="pub-render" class="btn btn-primary" type="button">Render Figure</button>
+						<a id="pub-download-svg" class="btn btn-secondary" href="#" target="_blank" rel="noopener">Download SVG</a>
+						<a id="pub-download-png" class="btn btn-secondary" href="#" target="_blank" rel="noopener">Download PNG</a>
+						<a id="pub-download-pdf" class="btn btn-secondary" href="#" target="_blank" rel="noopener">Download PDF</a>
+					</div>
+					<div style="margin-top:16px;border:1px solid #dbeafe;border-radius:10px;background:#f8fbff;padding:16px;">
+						<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+							<div>
+								<div style="font-size:0.78rem;font-weight:700;color:#1e40af;text-transform:uppercase;">Preview</div>
+								<div style="font-size:0.83rem;color:#3b82f6;">Server-rendered SVG with publication-oriented styling.</div>
+							</div>
+						</div>
+						<div id="pub-figure-preview-wrap" style="overflow:auto;">
+							<img id="pub-figure-preview" alt="Publication figure preview" style="max-width:100%;display:none;border:1px solid #cbd5e1;border-radius:8px;background:white;">
+							<div id="pub-figure-placeholder" style="font-size:0.85rem;color:var(--text-light);">Render the figure to preview it here.</div>
+						</div>
+						<div id="pub-figure-error" style="display:none;margin-top:10px;padding:10px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;color:#9a3412;font-size:0.82rem;"></div>
+					</div>
+				</div>
+
+				<div class="form-section">
 					<div class="form-section-title">Image Generation</div>
 					<div class="button-group">
 						<button id='genimage' class="btn btn-primary">Generate Image</button> 
@@ -233,7 +302,7 @@
 			</div>
 
 			<div id="original-view" style="display: none; font-family: monospace; background: white; padding: 20px;">
-				<div><a id='home-original' href=''>Home</a></div>
+				<div><a id='home-original' href='/tools/sspred'>Home</a></div>
 				<div id='statusmessages-original' style="padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; background-color: #f9f9f9;">
 					<b>Service Status:</b><br/>
 					<div id='statuscontent-original'></div>
@@ -426,12 +495,11 @@
 			</div>
 
 <script type="text/javascript">
-
-	document.getElementById("home").setAttribute('href', document.location.origin + '/tools/sspred');
 	var a = {{ data | safe}};
 	var jobId = window.location.pathname.split('/').pop();
 	document.getElementById('job-id-display').textContent = jobId;
-	var serviceNames = ['PSI', 'JPred', 'Sable', 'SSPro', 'Yaspin', 'PHDpsi', 'PROFsec', 'Predator', 'NetSurf'];
+	var serviceNames = ['PSI', 'JPred', 'Sable', 'SSPro', 'Yaspin', 'Predator', 'NetSurf'];
+	var selectedServiceNames = [];
 	
 	// Progress tracking
 	var progressData = {};
@@ -440,24 +508,12 @@
 	function initProgressBars() {
 		var container = document.getElementById('progress-container');
 		container.innerHTML = '';
+		selectedServiceNames = [];
 		
 		for (var i = 0; i < serviceNames.length; i++) {
 			var serviceName = serviceNames[i];
 			var statKey = serviceName.toLowerCase() + 'stat';
 			var msgKey = serviceName.toLowerCase() + 'msg';
-			
-			// Check if this service was selected
-			var wasSelected = false;
-			for (var key in a[0]) {
-				if (key.toLowerCase() === statKey) {
-					wasSelected = true;
-					break;
-				}
-			}
-			
-			if (!wasSelected) continue;
-			
-			var status = a[0][statKey] || 0;
 			var message = '';
 			for (var key in a[0]) {
 				if (key.toLowerCase() === msgKey && a[0][key] != null && a[0][key] != "") {
@@ -465,6 +521,11 @@
 					break;
 				}
 			}
+			var status = a[0][statKey];
+			var wasSelected = status != null || message !== '';
+			if (!wasSelected) continue;
+			selectedServiceNames.push(serviceName);
+			status = status || 0;
 			
 			progressData[serviceName] = {
 				status: status,
@@ -589,11 +650,142 @@
 			progress: progress
 		};
 	}
+
+	function escapeHtml(value) {
+		return String(value == null ? '' : value)
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#39;');
+	}
+
+	function rawErrorForService(serviceName) {
+		var key = serviceName.toLowerCase() + 'pred';
+		var raw = a[0][key];
+		if (!raw || raw === 'Queue Full') {
+			raw = a[0][serviceName.toLowerCase() + 'conf'] || '';
+		}
+		return raw || '';
+	}
+
+	function renderFailureSummary() {
+		var wrap = document.getElementById('failure-summary');
+		if (!wrap) return;
+		var failures = [];
+		for (var i = 0; i < selectedServiceNames.length; i++) {
+			var serviceName = selectedServiceNames[i];
+			var status = a[0][serviceName.toLowerCase() + 'stat'];
+			if (status == 2 || status == 4 || status == -1) {
+				failures.push({
+					name: serviceName,
+					summary: a[0][serviceName.toLowerCase() + 'msg'] || '',
+					raw: rawErrorForService(serviceName)
+				});
+			}
+		}
+		if (!failures.length) {
+			wrap.style.display = 'none';
+			wrap.innerHTML = '';
+			return;
+		}
+		wrap.style.display = 'block';
+		wrap.innerHTML = '<div class="form-section" style="border-left:4px solid #f59e0b;background:#fffaf0;">' +
+			'<div class="form-section-title" style="color:#92400e;">Failure Details</div>' +
+			failures.map(function(item) {
+				return '<div style="padding:10px 0;border-top:1px solid #fde68a;">' +
+					'<div style="font-weight:700;color:#92400e;">' + escapeHtml(item.name) + '</div>' +
+					(item.summary ? '<div style="font-size:0.84rem;color:#78350f;margin-top:4px;">' + escapeHtml(item.summary) + '</div>' : '') +
+					(item.raw ? '<div style="margin-top:8px;padding:8px 10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;font-size:0.77rem;color:#9a3412;font-family:monospace;">' + escapeHtml(item.raw) + '</div>' : '') +
+					'</div>';
+			}).join('') +
+			'</div>';
+	}
+
+	function completedPredictorNames() {
+		var names = [];
+		for (var i = 0; i < selectedServiceNames.length; i++) {
+			var serviceName = selectedServiceNames[i];
+			var status = a[0][serviceName.toLowerCase() + 'stat'];
+			if (status == 1 || status == 3) {
+				names.push(serviceName);
+			}
+		}
+		return names;
+	}
+
+	function buildPublicationControls() {
+		var wrap = document.getElementById('pub-predictor-controls');
+		if (!wrap) return;
+		var names = completedPredictorNames();
+		if (!names.length) {
+			wrap.innerHTML = '<div style="font-size:0.8rem;color:var(--text-light);">Predictor tracks appear here as services finish.</div>';
+			return;
+		}
+		wrap.innerHTML = names.map(function(name) {
+			var checked = 'checked';
+			return '<label><input type="checkbox" class="pub-predictor" value="' + escapeHtml(name) + '" ' + checked + '> ' + escapeHtml(name) + '</label>';
+		}).join('');
+	}
+
+	function publicationQuery(download, format) {
+		var params = new URLSearchParams();
+		params.set('row_length', (document.getElementById('rowfield') || { value: 60 }).value || 60);
+		params.set('style', (document.getElementById('pub-style') || { value: 'journal' }).value);
+		params.set('palette', (document.getElementById('pub-palette') || { value: 'colorblind' }).value);
+		params.set('show_sequence', document.getElementById('pub-sequence').checked ? '1' : '0');
+		params.set('show_consensus', document.getElementById('pub-consensus').checked ? '1' : '0');
+		params.set('show_pdb', document.getElementById('pub-pdb') && document.getElementById('pub-pdb').checked ? '1' : '0');
+		params.set('show_confidence', document.getElementById('pub-confidence').checked ? '1' : '0');
+		params.set('legend', document.getElementById('pub-legend').checked ? '1' : '0');
+		params.set('clean', document.getElementById('pub-clean').checked ? '1' : '0');
+		params.set('compare', document.getElementById('pub-compare') && document.getElementById('pub-compare').checked ? '1' : '0');
+		params.set('title', (document.getElementById('pub-title') || { value: '' }).value || 'SSPred Secondary Structure Summary');
+		params.set('regions', (document.getElementById('pub-regions') || { value: '' }).value || '');
+		var selectedPredictors = Array.prototype.slice.call(document.querySelectorAll('.pub-predictor:checked')).map(function(node) {
+			return node.value;
+		});
+		params.set('predictors', selectedPredictors.join(','));
+		if (download) {
+			params.set('download', '1');
+		}
+		if (format === 'png') {
+			params.set('scale', '4');
+		}
+		return params.toString();
+	}
+
+	function renderPublicationFigure() {
+		var preview = document.getElementById('pub-figure-preview');
+		var placeholder = document.getElementById('pub-figure-placeholder');
+		var errorBox = document.getElementById('pub-figure-error');
+		if (!preview || !placeholder || !errorBox) return;
+		var svgUrl = '/tools/sspred/figure/' + jobId + '.svg?' + publicationQuery(false, 'svg') + '&_ts=' + Date.now();
+		var svgDownload = '/tools/sspred/figure/' + jobId + '.svg?' + publicationQuery(true, 'svg');
+		var pngDownload = '/tools/sspred/figure/' + jobId + '.png?' + publicationQuery(true, 'png');
+		var pdfDownload = '/tools/sspred/figure/' + jobId + '.pdf?' + publicationQuery(true, 'pdf');
+		document.getElementById('pub-download-svg').href = svgDownload;
+		document.getElementById('pub-download-png').href = pngDownload;
+		document.getElementById('pub-download-pdf').href = pdfDownload;
+		errorBox.style.display = 'none';
+		placeholder.style.display = 'none';
+		preview.style.display = 'block';
+		preview.onload = function() {
+			errorBox.style.display = 'none';
+		};
+		preview.onerror = function() {
+			preview.style.display = 'none';
+			placeholder.style.display = 'block';
+			errorBox.style.display = 'block';
+			errorBox.textContent = 'Could not render the publication figure. Check whether the selected tracks are available or whether PNG/PDF export dependencies are missing on the server.';
+		};
+		preview.src = svgUrl;
+	}
 	
 	// Poll for updates
 	function pollForUpdates() {
 		if (!document.getElementById('togglerefresh') || document.getElementById('togglerefresh').checked) {
-			var url = window.location.origin + '/dboutput/' + jobId + '?json=1';
+			var url = window.location.origin + '/tools/sspred/dboutput/' + jobId + '?json=1';
 			fetch(url)
 				.then(response => response.text())
 				.then(text => {
@@ -603,8 +795,8 @@
 							var newData = data[0];
 							
 							// Update progress bars
-							for (var i = 0; i < serviceNames.length; i++) {
-								var serviceName = serviceNames[i];
+							for (var i = 0; i < selectedServiceNames.length; i++) {
+								var serviceName = selectedServiceNames[i];
 								var statKey = serviceName.toLowerCase() + 'stat';
 								var msgKey = serviceName.toLowerCase() + 'msg';
 								
@@ -619,11 +811,13 @@
 								
 								// Only update if status or message changed
 								if (progressData[serviceName]) {
-									if (progressData[serviceName].status != status || progressData[serviceName].message != message) {
+								if (progressData[serviceName].status != status || progressData[serviceName].message != message) {
 										updateProgressBar(serviceName, status, message);
 										// Update a[0] for results display
 										a[0][statKey] = status;
 										a[0][msgKey] = message;
+										renderFailureSummary();
+										buildPublicationControls();
 										
 										// Regenerate results table if a service completed
 										if (status == 1 || status == 3) {
@@ -639,8 +833,8 @@
 							// Check if all services are done
 							var allComplete = true;
 							var hasRunning = false;
-							for (var i = 0; i < serviceNames.length; i++) {
-								var serviceName = serviceNames[i];
+							for (var i = 0; i < selectedServiceNames.length; i++) {
+								var serviceName = selectedServiceNames[i];
 								var statKey = serviceName.toLowerCase() + 'stat';
 								if (newData[statKey] && newData[statKey] != 0) {
 									if (newData[statKey] != 1 && newData[statKey] != 3 && newData[statKey] != 2 && newData[statKey] != 4) {
@@ -670,6 +864,9 @@
 	
 	// Initialize on load
 	initProgressBars();
+	renderFailureSummary();
+	buildPublicationControls();
+	renderPublicationFigure();
 	
 	// Poll every 3 seconds
 	setInterval(pollForUpdates, 3000);
@@ -702,18 +899,14 @@
 	function generateRows(length)
 	{
 		var sites = []; //array containing which sites are completed
-		
-		//fill sites
-		for (var key of Object.keys(a[0]))
-		{
-			if (key.slice(key.length -4) == "stat") 
-			{
-				statusproduct *= a[0][key];
-				if (a[0][key] == 1 || a[0][key] == 3)
-				{
-					var name = key.slice(0,-4);
-					sites.push(name); //push sites with status 1 or 3 into array
-				}
+		statusproduct = 1;
+
+		for (var s = 0; s < selectedServiceNames.length; s++) {
+			var name = selectedServiceNames[s].toLowerCase();
+			var serviceStatus = a[0][name + 'stat'] || 0;
+			statusproduct *= serviceStatus;
+			if (serviceStatus == 1 || serviceStatus == 3) {
+				sites.push(name);
 			}
 		}
 		
@@ -810,8 +1003,6 @@
 			modernView.style.display = 'none';
 			originalView.style.display = 'block';
 			toggleBtn.textContent = 'View Modern Format';
-			// Set home link for original view
-			document.getElementById("home-original").setAttribute('href', document.location.origin);
 			// Copy status messages to original view
 			var statusContent = document.getElementById('statuscontent');
 			if (statusContent && statusContent.innerHTML) {
@@ -831,17 +1022,12 @@
 	// Generate rows for original view - using exact same logic as generateRows
 	function generateRowsOriginal(length) {
 		var sites = []; //array containing which sites are completed
-		
-		//fill sites
-		for (var key of Object.keys(a[0]))
-		{
-			if (key.slice(key.length -4) == "stat") 
-			{
-				if (a[0][key] == 1 || a[0][key] == 3)
-				{
-					var name = key.slice(0,-4);
-					sites.push(name); //push sites with status 1 or 3 into array
-				}
+
+		for (var s = 0; s < selectedServiceNames.length; s++) {
+			var name = selectedServiceNames[s].toLowerCase();
+			var serviceStatus = a[0][name + 'stat'] || 0;
+			if (serviceStatus == 1 || serviceStatus == 3) {
+				sites.push(name);
 			}
 		}
 		
@@ -943,20 +1129,27 @@
 		document.getElementById("togglerefresh").checked = false
 		window.stop();
 	}
-	
-	$('#updaterows').on('click', function() 
+
+	function bindClick(id, handler) {
+		var el = document.getElementById(id);
+		if (el) {
+			el.addEventListener('click', handler);
+		}
+	}
+
+	bindClick('updaterows', function() 
 	{
 		var rownum = document.getElementById('rowfield');
 		generateRows(rownum.value);
 	});
 	
-	$('#updaterows-original').on('click', function() 
+	bindClick('updaterows-original', function() 
 	{
 		var rownum = document.getElementById('rowfield-original');
 		generateRowsOriginal(rownum.value);
 	});
 	
-	$('#updatecolor').on('click', function() {
+	bindClick('updatecolor', function() {
 		var hcolor = document.getElementById('hcolor').value;
 		var ccolor = document.getElementById('ccolor').value;
 		var ecolor = document.getElementById('ecolor').value;
@@ -969,7 +1162,7 @@
 		updateColors(hcolor, ccolor, ecolor);
 	});
 	
-	$('#updatecolor-original').on('click', function() {
+	bindClick('updatecolor-original', function() {
 		var hcolor = document.getElementById('hcolor-original').value;
 		var ccolor = document.getElementById('ccolor-original').value;
 		var ecolor = document.getElementById('ecolor-original').value;
@@ -980,6 +1173,10 @@
 		document.getElementById('ecolor').value = ecolor;
 		
 		updateColors(hcolor, ccolor, ecolor);
+	});
+
+	bindClick('pub-render', function() {
+		renderPublicationFigure();
 	});
 	
 	function updateColors(hcolor, ccolor, ecolor) {
@@ -1108,7 +1305,7 @@
 	}
 	
 	// Image generation for modern view
-	$('#genimage').on('click', function() {
+	bindClick('genimage', function() {
 		var table = document.getElementById('mytable');
 		var imgOutput = document.getElementById('imgoutput');
 		if (!table || !imgOutput) return;
@@ -1123,7 +1320,7 @@
 		});
 	});	
 
-	$('#genimagewlegend').on('click', function() {
+	bindClick('genimagewlegend', function() {
 		var table = document.getElementById('fullresults');
 		var imgOutput = document.getElementById('imgoutput');
 		if (!table || !imgOutput) return;
@@ -1139,7 +1336,7 @@
 	});
 
 	// Image generation for original view
-	$('#genimage-original').on('click', function() {
+	bindClick('genimage-original', function() {
 		var table = document.getElementById('mytable-original');
 		var imgOutput = document.getElementById('imgoutput-original');
 		if (!table || !imgOutput) return;
@@ -1154,7 +1351,7 @@
 		});
 	});	
 
-	$('#genimagewlegend-original').on('click', function() {
+	bindClick('genimagewlegend-original', function() {
 		var table = document.getElementById('fullresults-original');
 		var imgOutput = document.getElementById('imgoutput-original');
 		if (!table || !imgOutput) return;
@@ -1170,7 +1367,7 @@
 	});
 
 	// Save image handlers
-	$('#saveimage').on('click', function() {
+	bindClick('saveimage', function() {
 		var canvas = document.querySelector('#imgoutput canvas');
 		if (!canvas) return;
 		imglink = canvas.toDataURL("image/png", 1.0);
@@ -1181,7 +1378,7 @@
 		saveEle.click();
 	});
 	
-	$('#saveimage-original').on('click', function() {
+	bindClick('saveimage-original', function() {
 		var canvas = document.querySelector('#imgoutput-original canvas');
 		if (!canvas) return;
 		imglink = canvas.toDataURL("image/png", 1.0);
@@ -1205,5 +1402,6 @@
 	</script>
 		</main>
 	</div>
-</body>
-</html>
+	</div>
+</section>
+{% endblock %}

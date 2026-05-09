@@ -41,10 +41,10 @@
       <div>
         <span class="tool-badge">Active · Free to Use</span>
         <h3>SSPred — Secondary Structure Predictor</h3>
-        <p>Consensus secondary structure prediction aggregating 8 servers — PSIPred, JPred4, SABLE, SSPro, YASPIN, PHDpsi, PROFsec, and Predator — with majority voting and PDB lookup.</p>
+        <p>Consensus secondary structure prediction combining PSIPRED, JPred4, SABLE, SSPro, YASPIN, Predator, and NetSurfP-2.0 with majority voting and optional PDB lookup.</p>
         <div class="tool-meta">
-          <div class="tool-meta-item"><strong>8</strong> Servers</div>
-          <div class="tool-meta-item"><strong>30–4000</strong> AA</div>
+          <div class="tool-meta-item"><strong>7</strong> Servers</div>
+          <div class="tool-meta-item"><strong>40–4000</strong> AA</div>
           <div class="tool-meta-item"><strong>PDB</strong> Lookup</div>
         </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;">
@@ -69,6 +69,25 @@
           <a href="/tools/protpipe" class="btn-lab btn-lab-white" style="color:#0d9488;">Launch ProtPipe →</a>
           <a href="/tools/protpipe/archive" class="btn-lab btn-lab-white-outline">Job Archive</a>
         </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;">
+      <div class="lab-card" style="padding:22px;">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px;">
+          <h3 style="font-size:1.05rem;color:var(--text);">StructMap</h3>
+          <span class="badge badge-dev">Beta</span>
+        </div>
+        <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:14px;">A cleaner interpretation layer on top of ProtPipe for domain architecture, topology, and functional-site context.</p>
+        <a href="/tools/structmap" class="btn-lab btn-lab-outline btn-sm">Open StructMap →</a>
+      </div>
+      <div class="lab-card" style="padding:22px;">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px;">
+          <h3 style="font-size:1.05rem;color:var(--text);">DisorderPred</h3>
+          <span class="badge badge-dev">Beta</span>
+        </div>
+        <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:14px;">Focused intrinsic-disorder analysis with low-complexity regions and a built-in secondary-structure overlay.</p>
+        <a href="/tools/disorderpred" class="btn-lab btn-lab-outline btn-sm">Open DisorderPred →</a>
       </div>
     </div>
 
@@ -120,27 +139,18 @@
       </div>
     </div>
     <div class="news-list" style="max-width:800px;">
+      {% for item in cms_news %}
       <div class="news-item">
-        <div class="news-date">Mar 2026</div>
+        <div class="news-date">{{ item.date_label }}</div>
         <div class="news-content">
-          <h4>SSPred v2.0 Launched</h4>
-          <p>Updated with support for 8 prediction servers, real-time progress tracking, PDB structure integration, and consensus majority voting.</p>
+          <h4>{{ item.title }}</h4>
+          <p>{{ item.body }}</p>
+          {% if item.link_url %}
+          <a href="{{ item.link_url }}" target="_blank" rel="noopener" style="font-size:0.84rem;font-weight:600;">{{ item.link_text or 'Read more' }} ↗</a>
+          {% endif %}
         </div>
       </div>
-      <div class="news-item">
-        <div class="news-date">2025</div>
-        <div class="news-content">
-          <h4>Guest Editor — MDPI Pathogens</h4>
-          <p>Prof. Singh serves as guest editor of the Special Issue "Computational Approaches in Mechanisms of Pathogenesis" in the open-access journal Pathogens.</p>
-        </div>
-      </div>
-      <div class="news-item">
-        <div class="news-date">2025</div>
-        <div class="news-content">
-          <h4>New Publication in Pathogens</h4>
-          <p>Chou et al. (including Singh S.) publish "Venomous Cargo: Diverse Toxin-Related Proteins Are Associated with Extracellular Vesicles in Parasitoid Wasp Venom." Pathogens 14(3). doi: 10.3390/pathogens14030255.</p>
-        </div>
-      </div>
+      {% endfor %}
     </div>
   </div>
 </section>

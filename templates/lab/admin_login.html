@@ -1,0 +1,40 @@
+{% extends "lab/lab_base.html" %}
+{% block title %}Admin Login{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="lab-container">
+    <h1>Admin CMS</h1>
+    <p>Restricted editing access for site content, announcements, team members, and publications.</p>
+  </div>
+</section>
+
+<section class="lab-section" style="padding:48px 0 80px;">
+  <div class="lab-container" style="max-width:720px;">
+    {% if error %}
+    <div class="pipe-validation-msg error" style="margin-bottom:20px;">{{ error }}</div>
+    {% endif %}
+
+    {% if current_user %}
+    <div class="pipe-form-section">
+      <div class="pipe-form-section-title">Signed In</div>
+      <p style="font-size:0.95rem;color:var(--text-secondary);margin-bottom:16px;">Logged in as <strong>{{ current_user.email }}</strong> ({{ current_user.role }}).</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="/admin/cms" class="btn-lab btn-lab-primary">Open CMS →</a>
+        <a href="/admin/logout" class="btn-lab btn-lab-outline">Log Out</a>
+      </div>
+    </div>
+    {% else %}
+    <div class="pipe-form-section">
+      <div class="pipe-form-section-title">Google Login</div>
+      <p style="font-size:0.92rem;color:var(--text-secondary);margin-bottom:16px;">Use a Google account that has been approved for CMS access.</p>
+      {% if google_enabled %}
+      <a href="/admin/auth/google/start" class="btn-lab btn-lab-primary">Sign in with Google →</a>
+      {% else %}
+      <div class="pipe-validation-msg warning">Google login is not configured yet. Add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SITE_URL`, and approved emails before using the CMS.</div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

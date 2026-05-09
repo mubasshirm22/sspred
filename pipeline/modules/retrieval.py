@@ -50,11 +50,14 @@ def run(input_data: dict, job_dir: str) -> dict:
             "error": str
         }
     """
-    input_type = input_data.get("input_type", "raw_fasta")
+    input_type = input_data.get("input_type", "auto")
     raw = (input_data.get("sequence_input") or "").strip()
 
     if not raw:
         return _err("No input provided.")
+
+    if input_type == "auto":
+        input_type = _detect_input_type(raw)
 
     if input_type == "uniprot":
         return _fetch_uniprot(raw)
@@ -90,6 +93,8 @@ def _parse_raw(raw: str) -> dict:
 
 def _fetch_uniprot(accession: str) -> dict:
     accession = accession.strip().upper()
+    if _looks_like_ncbi_identifier(accession):
+        return _fetch_ncbi(accession)
     url = f"https://rest.uniprot.org/uniprotkb/{accession}.fasta"
     try:
         r = requests.get(url, timeout=20)
@@ -136,6 +141,8 @@ def _fetch_ncbi(accession: str) -> dict:
 
     Entrez.email = ENTREZ_EMAIL
     accession = accession.strip()
+    if _looks_like_uniprot_identifier(accession):
+        return _fetch_uniprot(accession)
 
     # ------------------------------------------------------------------
     # Accession type detection and resolution
@@ -358,3 +365,38 @@ def _resolve_gene_to_protein(gene_id: str) -> dict | None:
 
 def _err(msg: str) -> dict:
     return {"status": "error", "sequence": "", "header": "", "source": "", "organism": "", "error": msg}
+
+
+def _detect_input_type(raw: str) -> str:
+    text = raw.strip()
+    if not text:
+        return "raw_fasta"
+    if text.startswith(">") or "\n" in text or " " in text:
+        return "raw_fasta"
+    if _looks_like_ncbi_identifier(text):
+        return "ncbi"
+    if _looks_like_uniprot_identifier(text):
+        return "uniprot"
+    return "raw_fasta"
+
+
+def _looks_like_ncbi_identifier(text: str) -> bool:
+    token = text.strip().upper()
+    if not token:
+        return False
+    if re.match(r'^(NP_|XP_|WP_|YP_|AP_|ZP_|NM_|XM_|NR_|XR_|NG_|NC_|NW_|NZ_|NT_)', token):
+        return True
+    if re.match(r'^[A-Z]{4,6}\d{6,}(?:\.\d+)?$', token):
+        return True
+    if re.match(r'^\d{4,10}$', token):
+        return True
+    return False
+
+
+def _looks_like_uniprot_identifier(text: str) -> bool:
+    token = text.strip().upper()
+    return bool(
+        re.match(r'^[OPQ][0-9][A-Z0-9]{3}[0-9](?:-\d+)?$', token) or
+        re.match(r'^[A-NR-Z][0-9][A-Z0-9]{3}[0-9](?:-\d+)?$', token) or
+        re.match(r'^[A-Z0-9]{10}$', token)
+    )

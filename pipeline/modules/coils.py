@@ -17,6 +17,8 @@ merged if gap <= 5 residues, minimum 14 residues (one heptad repeat × 2).
 
 import os
 import re
+import time
+from urllib.parse import urljoin
 import requests
 
 _URL       = "https://npsa-prabi.ibcp.fr/cgi-bin/primanal_lupas.pl"
@@ -24,6 +26,8 @@ _TIMEOUT   = 60
 _THRESH    = 0.5   # per-residue probability threshold
 _MERGE_GAP = 5     # merge segments separated by this many residues or fewer
 _MIN_LEN   = 14    # discard coiled-coil segments shorter than this
+_POLL_WAIT = 90
+_POLL_STEP = 5
 
 
 def run(sequence: str, job_dir: str) -> dict:
@@ -71,6 +75,15 @@ def run(sequence: str, job_dir: str) -> dict:
         pass
 
     probs = _parse_probabilities(html)
+    if probs is None:
+        result_text = _fetch_result_text(html)
+        if result_text:
+            try:
+                with open(os.path.join(job_dir, "coils_result.txt"), "w", encoding="utf-8", errors="replace") as fh:
+                    fh.write(result_text)
+            except OSError:
+                pass
+            probs = _parse_probabilities(result_text)
     if probs is None:
         return _err(
             "LUPAS response could not be parsed — the server may have changed its output format. "
@@ -121,19 +134,27 @@ def _parse_probabilities(html: str) -> list | None:
 
     Returns list[float] length == sequence_length (0-indexed), or None on failure.
     """
-    pre_blocks = re.findall(r'<pre[^>]*>(.*?)</pre>', html, re.IGNORECASE | re.DOTALL)
+    direct = _parse_probability_lines(html)
+    if direct is not None:
+        return direct
 
-    line_pat = re.compile(r'^\s*(\d+)\s+([A-Z])\s+([\d.]+)\s*$', re.MULTILINE)
+    pre_blocks = re.findall(r'<pre[^>]*>(.*?)</pre>', html, re.IGNORECASE | re.DOTALL)
 
     for block in pre_blocks:
         # Strip any residual HTML tags (e.g. <b>, <font>)
         text = re.sub(r'<[^>]+>', '', block)
-        matches = line_pat.findall(text)
-        if len(matches) < 5:
-            continue
+        parsed = _parse_probability_lines(text)
+        if parsed is not None:
+            return parsed
 
+    return None
+
+
+def _parse_probability_lines(text: str) -> list | None:
+    line_pat = re.compile(r'^\s*(\d+)\s+([A-Z])\s+([\d.]+)\s*$', re.MULTILINE)
+    matches = line_pat.findall(text or "")
+    if len(matches) >= 5:
         max_pos = max(int(m[0]) for m in matches)
-        # Build 1-indexed array then slice to 0-indexed
         raw = [0.0] * (max_pos + 1)
         for pos_str, _aa, prob_str in matches:
             pos = int(pos_str)
@@ -141,9 +162,57 @@ def _parse_probabilities(html: str) -> list | None:
                 raw[pos] = float(prob_str)
             except (ValueError, IndexError):
                 pass
-        return raw[1:]  # drop index 0 → result is 0-indexed
+        return raw[1:]
 
-    return None
+    # Newer PRABI result text exposes three probability columns (Window=14/21/28)
+    # in a wider table, e.g.:
+    # 128 G     e 1.245    0.011       e 1.151    0.004       e 0.860    0.000
+    wide_pat = re.compile(
+        r'^\s*(\d+)\s+([A-Z])\s+\w\s+[-+]?\d*\.?\d+\s+([-+]?\d*\.?\d+)'
+        r'\s+\w\s+[-+]?\d*\.?\d+\s+([-+]?\d*\.?\d+)'
+        r'\s+\w\s+[-+]?\d*\.?\d+\s+([-+]?\d*\.?\d+)\s*$',
+        re.MULTILINE
+    )
+    wide_matches = wide_pat.findall(text or "")
+    if len(wide_matches) < 5:
+        return None
+    max_pos = max(int(m[0]) for m in wide_matches)
+    raw = [0.0] * (max_pos + 1)
+    for pos_str, _aa, prob14, prob21, prob28 in wide_matches:
+        pos = int(pos_str)
+        try:
+            raw[pos] = max(float(prob14), float(prob21), float(prob28))
+        except (ValueError, IndexError):
+            pass
+    return raw[1:]
+
+
+def _extract_result_link(html: str) -> str:
+    match = re.search(r'href\s*=\s*["\']?(/tmp/[^"\'>\s]+\.lupas)["\']?', html, re.IGNORECASE)
+    if not match:
+        return ""
+    return urljoin(_URL, match.group(1))
+
+
+def _fetch_result_text(html: str) -> str:
+    result_url = _extract_result_link(html)
+    if not result_url:
+        return ""
+
+    deadline = time.time() + _POLL_WAIT
+    last_text = ""
+    while time.time() < deadline:
+        try:
+            response = requests.get(result_url, timeout=30)
+            response.raise_for_status()
+            text = response.content.decode("iso-8859-1", errors="replace")
+            last_text = text
+            if _parse_probability_lines(text) is not None:
+                return text
+        except requests.RequestException:
+            pass
+        time.sleep(_POLL_STEP)
+    return last_text
 
 
 # ---------------------------------------------------------------------------
